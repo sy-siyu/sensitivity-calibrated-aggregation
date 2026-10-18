@@ -11,7 +11,9 @@ def main():
     N = calibration.multinomial(4000*K, p)
     T = calibration.binomial(N, e)
     fitted = SCA().fit(N, T, cap='3/2')
-    # The independent outcome cohort is generated AFTER freezing the grouping.
+    # Freeze the grouping before drawing an independent outcome cohort.
+    # Both samples use the same population masses p and propensities e,
+    # hence the same P(S, A); their observed counts need not match.
     outcomes = np.random.default_rng(2026101802)
     out_N = outcomes.multinomial(256*K, p)
     out_T = outcomes.binomial(out_N, e)

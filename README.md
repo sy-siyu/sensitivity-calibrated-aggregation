@@ -54,6 +54,8 @@ Check the returned status and completion metadata. A completed infinite envelope
 
 An independent binary-outcome cohort can be exported using `fit.release(out_N, out_T, treated_successes)`. `sca.analyze_release(artifact)` uses only anonymous aggregate counts, projected bounds, completed cell distortions and confidence metadata. Every selected group is included, including empty treated groups. The standard allocation is calibration `1/40`, raw outcomes `1/80`, aggregate outcomes `1/80`. Assignment validity holds simultaneously across candidate partitions/capacities on its common event. Outcome guarantees retain their pointwise scope for a prespecified capacity, profile and cohort size; admission does not imply nominal conditional coverage. The analyst cannot reconstruct the provider's detailed raw-data certification evidence from this release.
 
+The calibration and outcome cohorts must be independent samples sharing the same population assignment law \(P_{S,A}\), including both state frequencies and conditional treatment probabilities. Their observed counts need not match. Sharing only \(P(A\mid S)\) is insufficient because changes in state frequencies can change aggregate propensities. This is an assumption supporting the coverage guarantee, not a check of equality between observed counts.
+
 ## Reproduce the experiments
 
 No saved results or private archives are distributed or required. The runners generate counts, splits, pilot proposals, confidence regions, certificates and outcome cohorts from source. Newly generated inputs and evidence are written to an ignored workspace. Full reproduction recomputes prerequisites rather than importing published answers.
@@ -115,4 +117,4 @@ The public default has no switch to these comparisons. They live in experiment c
 
 `sca/` is the small public interface. `experiments/` holds the shared verified arithmetic and retained experiment kernels; `sca_reproduction/` regenerates their input dependencies and orchestrates fresh runs. `configs/`, `tests/`, `examples/` and `docs/` complete the release. No neural-training or unrelated release machinery is included.
 
-This repository contains code, configurations, tests and instructions only: no saved experimental evidence, generated tables/figures, manuscript, or original repository history. See [licensing status](LICENSING.md) and [third-party attribution](THIRD_PARTY_NOTICES.md). A project license has not yet been selected; this release does not silently relicense the research code or dependencies.
+This repository contains code, configurations, tests and instructions only: no saved experimental evidence, generated tables/figures, manuscript, or original repository history. The project is licensed under the [MIT License](LICENSE); see [licensing details](LICENSING.md) and [third-party attribution](THIRD_PARTY_NOTICES.md). Dependencies and downloaded data retain their own terms.

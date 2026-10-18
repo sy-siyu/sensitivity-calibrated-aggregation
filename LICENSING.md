@@ -1,5 +1,5 @@
-# Licensing status
+# Licensing
 
-No project-wide license was present in the source research repository or the initially empty target repository. No new license has been assigned by this release. Public availability is not a grant of an open-source license; users should obtain permission from the copyright holder before reuse beyond applicable rights. Selecting a project license remains an author decision.
+The project is licensed under the [MIT License](LICENSE), as approved by the author. The copyright attribution follows the project's author list: Siyu Wang, Xiaocong Chen, Javen Qinfeng Shi, Quan Z. Sheng, and Lina Yao. The license is included in source and wheel distributions.
 
-The curated research implementation retains its source provenance and internal module identifiers. It is not copied from the Git history of another project. External numerical packages are installed dependencies, not vendored code; their own copyright and license terms continue to apply. This repository does not relicense them. See THIRD_PARTY_NOTICES.md for source links and data attribution.
+The curated research implementation retains its source provenance, existing copyright notices and internal module identifiers. External numerical packages and downloaded data retain their own copyright notices and terms; this project's MIT license does not relicense them. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for source links and data attribution.

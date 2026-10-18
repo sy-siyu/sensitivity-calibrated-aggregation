@@ -51,6 +51,11 @@ class SCAResult:
     def release(self, N, T, successes, *, raw_budget='2'):
         """Export anonymous aggregate counts/bounds for an independent cohort.
 
+        Coverage assumes independent calibration and outcome samples with the
+        same population assignment law P(S, A): both state masses and treatment
+        propensities. Observed counts need not match. Sharing only P(A | S) is
+        insufficient: changed state masses can change aggregate propensities.
+
         The standard outcome interface requires calibration error1/40 and
         reserves1/80 each for raw/aggregate outcome families. Every selected
         group is retained, including groups with no treated observations.
