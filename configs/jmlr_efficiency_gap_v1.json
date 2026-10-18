@@ -1,0 +1,111 @@
+{
+  "version": "jmlr_efficiency_gap_v1",
+  "output_dir": "results/jmlr_efficiency_gap_v1",
+  "historical_source": "results/jmlr_verified_pipeline_v1",
+  "release_source": "results/jmlr_release_capacity_v1",
+  "historical_datasets": 4800,
+  "historical_conditions": 48,
+  "release_calibration_blocks": 300,
+  "procedures": [
+    "original",
+    "allocation_control",
+    "pooled_alternative"
+  ],
+  "caps": [
+    "5/4",
+    "3/2",
+    "2"
+  ],
+  "primary_cap": "3/2",
+  "historical_alpha": "1/20",
+  "release_alpha": "1/40",
+  "mass_mode_historical_and_release": "unknown_mass",
+  "allocation": {
+    "raw_fraction": "4/5",
+    "pooled_fraction": "1/5",
+    "pooled_individual": "alpha/5 divided by number of distinct fixed nonsingleton tree nodes"
+  },
+  "pooled_collection": "Distinct nonsingleton nodes of the two preserved fixed trees, with full support once; frozen before new assignment observations. Estimated-order cells may use pooling only on exact membership in this fixed collection.",
+  "selection": {
+    "historical": "existing combined-family minimum-count selector with preserved secondary ties and cap predicates",
+    "release": "existing at-most-capacity minimax certificate selector with exact rational comparisons and preserved ties",
+    "identity": "one at K; never capacity fallback below K",
+    "partial_bounds": "safe lower-bound pruning only; complete relevant cells or certify lower/upper optimum agreement; unresolved is not infinity or infeasibility"
+  },
+  "diagnostics": {
+    "oracle_margin": "log(c / minimum population distortion among family partitions with at most the minimum oracle count)",
+    "oracle_count_certificate": "minimum verified certificate over all family partitions with at most the oracle count; not certificate of one arbitrary oracle tie",
+    "capacity_decomposition": "per-block log(U/d*) = log(U/Dselected)+log(Dselected/d*), preserve exact multiplicative identity before logs, never clip negative inflation on coverage misses",
+    "mass_slice": "true fixed masses with original propensity intervals and original propensity confidence allocation unchanged; flag nonnested truth slices and retain misses",
+    "diameter_beta": "1/20",
+    "beta_split": "equal positive shares over occupancy/propensity for known mass; occupancy/propensity/mass for unknown mass",
+    "population_eta": "min_i min(e_i,1-e_i)",
+    "numerical_expansion": "actual maximum saved endpoint expansion per family; root fallbacks explicit; manuscript sufficient conditions marked inapplicable when violated",
+    "scope": "actual values on explicitly evaluated partitions; no selected-partition maximum described as an all-partition maximum; analytical bound not used by selector"
+  },
+  "recovery": {
+    "K": 64,
+    "p": "uniform 1/64",
+    "homogeneous_e": "1/2",
+    "alternative_e": "state0 4/13, all others1/2",
+    "alternative_full_distortion": "827/372",
+    "cap": "3/2",
+    "alpha": "1/20",
+    "replications": 300,
+    "sample_sizes": [
+      2000,
+      4000,
+      8000,
+      16000,
+      32000,
+      64000,
+      128000,
+      256000,
+      512000,
+      1000000,
+      2000000,
+      3000000
+    ],
+    "mass_modes": [
+      "known_mass",
+      "unknown_mass"
+    ],
+    "master_seed": 2026101603,
+    "development_seed": 202610160301,
+    "streams": "SeedSequence([master,replication,component]); independent paths, nested count increments, shared state counts and nonexceptional-state action counts across paired laws; separate components for state counts, fair actions and exact4/13 actions",
+    "sampler": "uniform-state multinomial sufficient-count increments; fair binomials; exceptional-state exact bounded integers0..12 with success<4; no millions-of-record materialization or rational mass rounding",
+    "qualification": "iid ideal draw model; PCG64 reproducible implementation, no formal iid theorem for pseudorandom bits",
+    "method_information": "provider receives counts/support/masses only in known-mass mode, never told homogeneous propensities; full fixed pooled collection allocation retained even when only full-support interval evaluated",
+    "full_partition_search": false,
+    "reference_points": "necessary lower bound1900 and exact-CP sufficient criterion at3million remain distinct from empirical first grid crossing of90%",
+    "theoretical_eta": "1/4",
+    "theoretical_eta_scope": "primary recovery b_n uses manuscript reference floor1/4 for both laws; truth-derived maximal floor reported separately"
+  },
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 1000000
+  },
+  "recovery_root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 4000000
+  },
+  "execution": {
+    "workers": 4,
+    "native_threads": 1,
+    "root_cache_entries": 20000,
+    "root_cache_trim_threshold": 30000,
+    "forecast_safety_factor": 1.5,
+    "recovery_preflight_paths": 1
+  },
+  "uncertainty": "individual binary rates two-sided95% Clopper-Pearson; continuous summaries and paired within-independent-block differences use pointwise mean +/-1.96SE; explicit denominators/infinity/unresolved frequencies; equal weight for each of original48conditions",
+  "interpretation": "retrospective historical comparison; pooled certificate is valid upper bound, not exact intersection supremum; no min of two full-alpha procedures; no minimax-unavoidability conclusion without lower bound; no outcome rerun or manuscript edit",
+  "planned_peak_storage_gb": 12
+}

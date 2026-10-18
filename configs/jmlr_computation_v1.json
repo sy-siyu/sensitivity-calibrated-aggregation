@@ -1,0 +1,65 @@
+{
+  "version": "jmlr_computation_v1",
+  "output_dir": "results/jmlr_computation_v1",
+  "support_sizes": [
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "law_types": [
+    "balanced_moderate",
+    "skewed_weak"
+  ],
+  "replications": 20,
+  "calibration_n_per_K": 4000,
+  "outcome_m_per_K": 256,
+  "mass_mode": "unknown",
+  "cap": "3/2",
+  "G": "2",
+  "alpha_cal": "1/40",
+  "alpha_raw": "1/80",
+  "alpha_z": "1/80",
+  "profile": "aligned",
+  "design_master_seed": 20261008,
+  "sampling_master_seed": 2026101701,
+  "sampling": "PCG64 independent component streams; exact 128-bit integer dyadic thresholds; no probability rounding",
+  "input_boundary": "complete finite-state sufficient integer counts; input generation and raw-data preprocessing excluded",
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 2000000
+  },
+  "lp_endpoint_seconds": 10.0,
+  "capacity_support_sizes": [
+    64,
+    128,
+    256
+  ],
+  "capacity_replications": 5,
+  "repeat_support_sizes": [
+    64,
+    256
+  ],
+  "repeat_replications": 5,
+  "preflight": {
+    "support_sizes": [
+      64,
+      256
+    ],
+    "replications_per_law": 1,
+    "case_limit_seconds": 3600,
+    "resident_limit_bytes": 8589934592
+  },
+  "execution": {
+    "active_timed_cases": 1,
+    "native_threads": 1,
+    "resource_limits": "freeze after four separate preflight cases"
+  },
+  "bridge_source": "results/jmlr_release_capacity_v1",
+  "bridge_expected_source": "results/jmlr_precision_frontier_v1"
+}

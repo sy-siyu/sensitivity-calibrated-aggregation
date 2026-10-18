@@ -1,0 +1,112 @@
+{
+  "version": "jmlr_release_capacity_v1",
+  "output_dir": "results/jmlr_release_capacity_v1",
+  "controlled_laws": [
+    "K64_balanced_moderate_ordered",
+    "K64_skewed_weak_ordered"
+  ],
+  "law_source": "results/jmlr_verified_pipeline_v1/exact_laws.json",
+  "tree_source": "results/jmlr_adaptive_search_v1/frozen_study.json",
+  "semi_synthetic_source": "data/ihdp_npci_1.csv",
+  "replications": 100,
+  "calibration_n_per_K": 4000,
+  "outcome_m_per_K": [
+    16,
+    256
+  ],
+  "capacity_grid": "distinct ceil(K/16),ceil(K/8),ceil(K/4),ceil(K/2),K",
+  "G": "2",
+  "Lambda_max": "3",
+  "alpha_cal": "1/40",
+  "alpha_raw_outcomes": "1/80",
+  "alpha_aggregate_outcomes": "1/80",
+  "mass_mode": "unknown_mass",
+  "methods": [
+    "verified_capacity",
+    "equal_calibration_mass"
+  ],
+  "population_oracle": "minimum true distortion at most B in the SAME realized union of two fixed-tree pruning families and estimated-order contiguous family; diagnostic only",
+  "selection": {
+    "objective": "minimum completed exact coupled certificate over group counts <= B",
+    "families": "union of two preserved fixed trees and estimated-propensity contiguous partitions; selected partition belongs to one constituent",
+    "order": "(2*T_i+1)/(2*N_i+2), immutable-ID ties",
+    "baseline": "B contiguous whole-state groups; greedily choose each cumulative cut closest to j*n/B while leaving one state per remaining group; earlier cut on exact ties",
+    "recurrence_ties": "each recurrence minimizes certificate, then group count/canonical partition/constituent among retained candidates; deterministic canonical local ties",
+    "outcomes_used": false,
+    "admission": "completed finite optimum or baseline certificate, count <= B, G*certificate <= 3; unresolved is not infeasibility; no identity fallback below K",
+    "pruning": "complete the smallest-capacity baseline first; if finite M, a partial cell bound > M may be excluded, since that baseline remains feasible at all requested capacities; retain rejection lower bound and exact interval DP resolution"
+  },
+  "semi_synthetic": {
+    "population": "all 747 local IHDP rows, byte-identical to public CEVAE source; original treatment and outcomes unused",
+    "state": "birth-weight quartile x maternal-age-above-median x infant sex; complete-reference exact linear quantiles; <= threshold ties; occupied tuples only declared before sampling",
+    "mass": "reference-state count/747; exact uniform reference-record resampling, no dyadic mass rounding",
+    "assignment": "(8+3*birthweight_bin+2*agebit+sex)/32",
+    "outcome_profiles": {
+      "low_heterogeneity": "(12+birthweight_bin+agebit+sex)/32",
+      "high_heterogeneity": "1/8 if (birthweight_bin+agebit+sex) even, otherwise 7/8"
+    },
+    "sensitivity": "G=2 conditional on the declared S; generated assignment independent of potential outcomes given S has actual sensitivity 1 within this class; no empirical real-world confounding claim",
+    "control_outcome": "Bernoulli(1/2)"
+  },
+  "sampler": {
+    "bit_generator": "PCG64",
+    "study_master_seed": 2026101502,
+    "development_master_seed": 202610150201,
+    "streams": "SeedSequence([master, law_index, replication, component_index])",
+    "components": [
+      "calibration_states",
+      "calibration_actions",
+      "outcome_states",
+      "outcome_actions",
+      "treated_outcome_uniforms",
+      "control_outcome_uniforms"
+    ],
+    "paired": "one independent block per law/replication, shared across methods/capacities/profiles and nested outcome prefixes; share uniforms across outcome profiles",
+    "qualification": "exact ideal integer/dyadic threshold construction; reproducible PRNG, no formal PRNG iid theorem"
+  },
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 1000000
+  },
+  "execution": {
+    "workers": 4,
+    "native_threads": 1,
+    "preflight_blocks_per_law": 1,
+    "forecast_safety_factor": 1.5,
+    "LP_seconds_per_endpoint": 10.0
+  },
+  "metrics": [
+    "admission",
+    "abstention",
+    "optimization_status",
+    "actual_groups",
+    "true_distortion",
+    "certificate",
+    "transported_budget",
+    "same_family_oracle_distortion",
+    "raw_population_width",
+    "aggregate_true_budget_population_width",
+    "aggregate_certified_budget_population_width",
+    "global_confidence_width",
+    "cellwise_confidence_width",
+    "raw_stratified_confidence_width",
+    "pooled_raw_confidence_width",
+    "entire_raw_interval_miss",
+    "admitted_and_miss",
+    "payload_bytes",
+    "analyst_seconds",
+    "provider_stages_seconds",
+    "peak_rss_bytes",
+    "root_fallbacks",
+    "LP_status"
+  ],
+  "uncertainty": "Continuous means: pointwise normal95 over independent blocks; individual binary rates: two-sided exact CP95; paired differences use within-block variation.",
+  "coverage_scope": "assignment event simultaneous over all capacities; outcomes pointwise for prespecified capacity/profile/cohort size/method. No outcome-based selection, no nominal conditional coverage after admission",
+  "precision_reporting": "report unconditional admitted-and-miss probability and abstention together; conditional admitted widths descriptive; [0,1] evaluation fallback separately identified and never a successful release",
+  "planned_peak_storage_gb": 3,
+  "interpretation": "explicit experimental reporting capacity, measured bytes and time only; pooled raw retains more information; no deployed institution, privacy guarantee, or measured administrative saving"
+}

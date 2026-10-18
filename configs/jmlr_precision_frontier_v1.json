@@ -1,0 +1,97 @@
+{
+  "version": "jmlr_precision_frontier_v1",
+  "output_dir": "results/jmlr_precision_frontier_v1",
+  "source_dir": "results/jmlr_release_capacity_v1",
+  "source_protocol": "results/jmlr_release_capacity_v1/frozen_protocol.json",
+  "law_ids": [
+    "K64_balanced_moderate_ordered",
+    "K64_skewed_weak_ordered",
+    "IHDP747_bwquartile_momage_sex"
+  ],
+  "replications": 100,
+  "independent_blocks": 300,
+  "calibration_n_per_K": 4000,
+  "mass_mode": "unknown_mass",
+  "certification": "principal Coupled CP; saved outward verified confidence endpoints",
+  "G": "2",
+  "alpha_cal": "1/40",
+  "alpha_raw_outcomes": "1/80",
+  "alpha_aggregate_outcomes": "1/80",
+  "outcome_m_per_K": [
+    16,
+    256
+  ],
+  "caps": [
+    "1",
+    "11/10",
+    "5/4",
+    "3/2",
+    "2"
+  ],
+  "selection_objective": "minimum number of cells among completed passing certificates; preserved threshold-search local ties",
+  "family": "union of the two preserved fixed-tree pruning families and all calibration-estimated-order contiguous partitions; no mixed families",
+  "order": "exact (2*T_i+1)/(2*N_i+2), immutable-ID ties; source order validated",
+  "selection_inputs": "saved calibration counts, region, cell evidence, order, fixed trees and immutable identifiers only",
+  "inference_budgets": "actual G*max(selected completed cell U) globally; actual G*U_C cellwise; G*c is a ceiling only",
+  "capacity_limits": [
+    8,
+    32,
+    4
+  ],
+  "width_target": "1/5",
+  "target_interpretation": "illustrative binary-mean total width, not a clinically established IHDP requirement",
+  "methods": [
+    "z_global",
+    "z_cellwise",
+    "raw_stratified",
+    "raw_pooled"
+  ],
+  "stages": [
+    "I0 raw population G",
+    "I1 aggregate population true transport",
+    "I2 aggregate population certified transport",
+    "I3 true aggregate assignment singleton boxes and actual aggregate outcome CP bounds at certified transport",
+    "I4 actual aggregate-only confidence enclosure"
+  ],
+  "signed_components": [
+    "population_aggregation",
+    "certificate_budget",
+    "outcome_sampling",
+    "assignment_estimation"
+  ],
+  "comparisons": "consecutive caps and each nonidentity-cap index versus cap 1, paired within original blocks; method differences versus shared raw stratification",
+  "selection_records": 1500,
+  "analysis_instances": 8000,
+  "method_analysis_records": 32000,
+  "population_profile_cap_records": 4000,
+  "uncertainty": {
+    "means_and_differences": "pointwise normal 95% Monte Carlo intervals over the 100 independent blocks per law/profile/cohort/cap; paired within block",
+    "binary_rates": "two-sided exact 95% Clopper-Pearson with actual independent-block denominator; do not pool heterogeneous conditions",
+    "assignment_unit": "one block per law/cap; no duplication across outcome profiles or cohorts",
+    "population_unit": "one block per law/profile/cap; no duplication across outcome cohort sizes",
+    "conditional": "admitted-only widths descriptive with actual denominators; unconditional failures and targets retain all 100 blocks",
+    "coverage": "assignment event simultaneous over partitions/caps; outcome guarantees pointwise for a prespecified analysis, not simultaneous over frontier"
+  },
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 1000000
+  },
+  "execution": {
+    "workers": 4,
+    "native_threads": 1,
+    "LP_seconds_per_endpoint": 10.0,
+    "forecast_safety_factor": 1.5,
+    "preflight_source": "existing release-study development blocks, one per law",
+    "cache_scope": "per block, complete exact input keys including allocation, numerical policy, partition, outcome boxes and actual budgets",
+    "timing_scope": "additional computation with saved evidence and shared caches; not a cold end-to-end benchmark"
+  },
+  "new_observations": 0,
+  "new_streams": false,
+  "outcome_based_selection": false,
+  "historical_overwrites": false,
+  "interpretation": "retrospective matched empirical operating curves; no globally optimal compression-width frontier or adaptive outcome-based cap choice"
+}

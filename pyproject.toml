@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sensitivity-calibrated-aggregation"
+version = "0.1.0"
+description = "Sensitivity-calibrated aggregation (SCA): verified certification, selection, and reproducible experiments"
+requires-python = ">=3.13"
+dependencies = ["numpy==2.4.3", "scipy==1.17.1", "python-flint==0.8.0"]
+readme = "README.md"
+
+[project.scripts]
+sca-reproduce = "sca_reproduction.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["sca*", "experiments*"]
+
+[tool.setuptools.data-files]
+configs = ["configs/*.json"]

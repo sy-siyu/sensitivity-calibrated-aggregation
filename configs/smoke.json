@@ -1,0 +1,20 @@
+{
+  "profile": "smoke",
+  "description": "Execution checks only. Smaller support and explicit bounded prefixes; never full-panel scientific evidence.",
+  "assignment_limit": 1,
+  "studies": {
+    "release": {"replications": 1, "controlled_support": 4},
+    "outcome": {"replications": 1, "outcome_supports": [4, 8, 4]},
+    "precision": {"replications": 1, "capacity_limits": [1, 1, 4]},
+    "computation": {
+      "replications": 1,
+      "support_sizes": [4],
+      "capacity_support_sizes": [4],
+      "capacity_replications": 1,
+      "repeat_support_sizes": [4],
+      "repeat_replications": 1,
+      "preflight": {"support_sizes": [4], "replications_per_law": 1}
+    },
+    "efficiency": {"recovery": {"replications": 1, "sample_sizes": [2000, 4000]}}
+  }
+}

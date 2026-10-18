@@ -1,0 +1,4 @@
+# Tested numerical environment; no plotting dependency is required.
+numpy==2.4.3
+scipy==1.17.1
+python-flint==0.8.0

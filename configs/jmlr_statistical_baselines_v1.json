@@ -1,0 +1,71 @@
+{
+  "version": "jmlr_statistical_baselines_v1",
+  "source_root": "results/jmlr_adaptive_search_v1",
+  "verified_reference_root": "results/jmlr_verified_adaptive_v1",
+  "output_dir": "results/jmlr_statistical_baselines_v1",
+  "alpha": "1/20",
+  "caps": [
+    "5/4",
+    "3/2",
+    "2"
+  ],
+  "primary_cap": "3/2",
+  "pilot_fractions": [
+    "1/5",
+    "1/2"
+  ],
+  "split_seed_recipe": [
+    20261012,
+    901,
+    "population_index",
+    "r_index",
+    "replication"
+  ],
+  "split_generator": "PCG64; sequential multivariate_hypergeometric nested fixed totals",
+  "joint_count_order": "immutable state ID, action 0 then action 1",
+  "pilot_order": "exact (T+1/2)/(N+1), immutable ID ties",
+  "pilot_score": "ordinary scipy Clopper-Pearson total error 1/20; untrusted ranking only",
+  "candidate_family": "unchanged two fixed trees plus all pilot-order contiguous partitions",
+  "candidate_rule": "one computed minimax-score representative per count; union score/canonical ties; sequence score, decreasing count, canonical",
+  "stopping": "single start; first failure; fewest cells in accepted prefix; identity available",
+  "fraction_selection": "greatest equally weighted development LTT compression at cap 3/2; exact ties choose 1/5; control uses same fraction",
+  "truth_evaluation": "postselection exact rational arithmetic on stored binary p/e; ratios invariant to common mass scaling; no newly exact sampling-law claim",
+  "scope": {
+    "conditions": 48,
+    "development_replications": [
+      0,
+      10
+    ],
+    "evaluation_replications": [
+      10,
+      100
+    ],
+    "development_datasets": 480,
+    "evaluation_datasets": 4320,
+    "development_new_rows": 5760,
+    "evaluation_new_rows": 25920,
+    "reference_rows": 14400,
+    "new_assignment_draws": 0
+  },
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 1000000
+  },
+  "execution": {
+    "workers": 2,
+    "native_threads": 1,
+    "preflight_limit_seconds": 1800,
+    "total_compute_limit_seconds": 21600,
+    "forecast_safety_factor": 1.5
+  },
+  "dependencies": {
+    "python-flint": "0.8.0",
+    "FLINT": "3.3.1",
+    "numpy": "2.4.3",
+    "scipy": "1.17.1"
+  }
+}

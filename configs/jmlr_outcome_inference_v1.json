@@ -1,0 +1,110 @@
+{
+  "version": "jmlr_outcome_inference_v1",
+  "output_dir": "results/jmlr_outcome_inference_v1",
+  "laws": [
+    "K16_balanced_moderate_ordered",
+    "K64_balanced_moderate_ordered",
+    "K64_skewed_weak_ordered"
+  ],
+  "law_source": "results/jmlr_verified_pipeline_v1/exact_laws.json",
+  "tree_source": "results/jmlr_adaptive_search_v1/frozen_study.json",
+  "replications": 100,
+  "calibration_n_per_K": 4000,
+  "outcome_m_per_K": [
+    4,
+    16,
+    64,
+    256
+  ],
+  "outcome_profiles": [
+    "constant",
+    "aligned",
+    "alternating"
+  ],
+  "G": "2",
+  "cap": "3/2",
+  "mass_mode": "unknown_mass",
+  "alpha_cal": "1/40",
+  "alpha_raw_outcomes": "1/80",
+  "alpha_cell_outcomes": "1/80",
+  "alpha_standalone_assignment": "1/40",
+  "alpha_standalone_outcomes": "1/40",
+  "methods": [
+    "raw_stratified",
+    "z_global",
+    "z_cellwise",
+    "raw_pooled",
+    "raw_standalone",
+    "z_untransported"
+  ],
+  "shared_event_methods": [
+    "raw_stratified",
+    "z_global",
+    "z_cellwise",
+    "raw_pooled"
+  ],
+  "sampler": {
+    "bit_generator": "PCG64",
+    "integer_bits": 64,
+    "study_master_seed": 20261014,
+    "preflight_master_seed": 2026101401,
+    "stream_seed_sequence": "[master_seed, law_index, replication, component_index]",
+    "components": [
+      "calibration_states",
+      "calibration_actions",
+      "outcome_states",
+      "outcome_actions",
+      "treated_outcome_uniforms",
+      "control_outcome_uniforms"
+    ],
+    "profiles_share_outcome_uniforms": true,
+    "outcome_prefixes_nested": true,
+    "qualification": "Exact dyadic thresholds under ideal uniform words; iid model assumed, no formal PRNG theorem"
+  },
+  "selection": {
+    "families": "union of two preserved fixed-tree pruning families and calibration estimated-propensity contiguous family",
+    "order": "(2*T_i+1)/(2*N_i+2), immutable-ID ties",
+    "recurrence_ties": "earliest predecessor; unchanged count/certificate/canonical constituent rule",
+    "outcomes_used": false,
+    "selected_once_per_replication": true
+  },
+  "plugin": {
+    "assignment": "calibration empirical masses and propensities; standalone uses pooled assignments",
+    "outcome": "empirical treated mean; no-treated group convention 1/2",
+    "interpretation": "descriptive plug-in sharp formulas, not confidence intervals"
+  },
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 1000000
+  },
+  "primary_metric": "paired raw_stratified minus z_global confidence width per operating point",
+  "secondary_metrics": [
+    "raw_standalone minus z_global width",
+    "z_global minus raw_pooled width",
+    "z_global minus z_cellwise width",
+    "signed population/certificate/statistical decomposition"
+  ],
+  "useful_width_reference": "1/50",
+  "execution": {
+    "workers": 2,
+    "native_threads": 1,
+    "scientific_compute_limit_seconds": 21600,
+    "preflight_limit_seconds": 1800,
+    "forecast_safety_factor": 1.5,
+    "preflight_replications_per_law": 2
+  },
+  "scope": {
+    "calibration_datasets": 300,
+    "outcome_cohort_blocks": 300,
+    "operating_points": 36,
+    "outcome_evaluations": 3600,
+    "method_intervals": 21600
+  },
+  "planned_peak_storage_gb": 2.0,
+  "planned_worker_memory_gb": 2.0,
+  "interpretation": "Compression cannot create information; retain stronger raw references and every unfavorable result. No retuning or outcome-dependent choices."
+}
