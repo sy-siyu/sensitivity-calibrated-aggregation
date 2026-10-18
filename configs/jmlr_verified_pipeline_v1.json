@@ -1,9 +1,7 @@
 {
   "version": "jmlr_verified_pipeline_v1",
-  "output_dir": "results/jmlr_verified_pipeline_v1",
-  "larger_source_root": "results/jmlr_adaptive_search_v1",
-  "four_source_root": "results/jmlr_finite_calibration_v1",
-  "baseline_source_root": "results/jmlr_statistical_baselines_v1",
+  "output_dir": "outputs/paper/assignment",
+  "baseline_source_root": "outputs/paper/assignment/splits",
   "alpha": "1/20",
   "caps": [
     "5/4",
@@ -16,14 +14,8 @@
     "large_datasets": 4800,
     "large_mass_evaluations": 9600,
     "large_labels": 172800,
-    "four_unique_datasets": 10000,
-    "four_mass_evaluations": 14000,
-    "four_certificates": 420000,
-    "four_labels": 84000,
     "baseline_development_datasets": 480,
-    "baseline_evaluation_datasets": 4320,
-    "outcome_rows": 225,
-    "new_assignment_draws": 0
+    "baseline_evaluation_datasets": 4320
   },
   "root_policy": {
     "grid_bits": 48,

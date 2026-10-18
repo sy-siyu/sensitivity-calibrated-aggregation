@@ -1,6 +1,6 @@
 {
   "version": "jmlr_computation_v1",
-  "output_dir": "results/jmlr_computation_v1",
+  "output_dir": "outputs/paper/computation",
   "support_sizes": [
     16,
     32,
@@ -59,7 +59,5 @@
     "active_timed_cases": 1,
     "native_threads": 1,
     "resource_limits": "freeze after four separate preflight cases"
-  },
-  "bridge_source": "results/jmlr_release_capacity_v1",
-  "bridge_expected_source": "results/jmlr_precision_frontier_v1"
+  }
 }

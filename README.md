@@ -97,6 +97,8 @@ For a single study, use `report STUDY` with the same workspace. Full reporters c
 
 See [reproduction details](docs/REPRODUCTION.md) for seed schedules, full panel sizes, restart behavior, numerical policies, cost limits and exact-regeneration scope. Full studies can take many CPU-hours and produce substantial exact-number evidence; they were **not rerun for this code release**. A smoke check establishes execution, not the paper's statistical conclusions.
 
+Release validation used a fresh checkout and clean Python environment with the original research directory denied by the operating-system sandbox: 39 focused tests, a fresh checksum-verified download, the principal SCA example, and all eight bounded experiment paths passed. The checks include separate-process aggregate-only reconstruction and exact replay. They generated numerical tables locally; those outputs are excluded from the release and its Git history.
+
 ## Baselines, ablations and references
 
 | Role | Implementations retained for the experiments |

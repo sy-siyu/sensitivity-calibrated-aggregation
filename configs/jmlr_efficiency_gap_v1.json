@@ -1,8 +1,8 @@
 {
   "version": "jmlr_efficiency_gap_v1",
-  "output_dir": "results/jmlr_efficiency_gap_v1",
-  "historical_source": "results/jmlr_verified_pipeline_v1",
-  "release_source": "results/jmlr_release_capacity_v1",
+  "output_dir": "outputs/paper/efficiency",
+  "historical_source": "outputs/paper/assignment",
+  "release_source": "outputs/paper/release",
   "historical_datasets": 4800,
   "historical_conditions": 48,
   "release_calibration_blocks": 300,

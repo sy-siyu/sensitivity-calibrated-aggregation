@@ -1,12 +1,10 @@
 {
   "version": "jmlr_release_capacity_v1",
-  "output_dir": "results/jmlr_release_capacity_v1",
+  "output_dir": "outputs/paper/release",
   "controlled_laws": [
     "K64_balanced_moderate_ordered",
     "K64_skewed_weak_ordered"
   ],
-  "law_source": "results/jmlr_verified_pipeline_v1/exact_laws.json",
-  "tree_source": "results/jmlr_adaptive_search_v1/frozen_study.json",
   "semi_synthetic_source": "data/ihdp_npci_1.csv",
   "replications": 100,
   "calibration_n_per_K": 4000,

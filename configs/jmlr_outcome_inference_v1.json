@@ -1,13 +1,11 @@
 {
   "version": "jmlr_outcome_inference_v1",
-  "output_dir": "results/jmlr_outcome_inference_v1",
+  "output_dir": "outputs/paper/outcome",
   "laws": [
     "K16_balanced_moderate_ordered",
     "K64_balanced_moderate_ordered",
     "K64_skewed_weak_ordered"
   ],
-  "law_source": "results/jmlr_verified_pipeline_v1/exact_laws.json",
-  "tree_source": "results/jmlr_adaptive_search_v1/frozen_study.json",
   "replications": 100,
   "calibration_n_per_K": 4000,
   "outcome_m_per_K": [

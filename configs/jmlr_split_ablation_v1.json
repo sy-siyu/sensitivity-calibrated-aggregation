@@ -1,8 +1,8 @@
 {
   "version": "jmlr_split_ablation_v1",
-  "output_dir": "results/jmlr_split_ablation_v1",
-  "split_source": "results/jmlr_statistical_baselines_v1",
-  "full_source": "results/jmlr_verified_pipeline_v1",
+  "output_dir": "outputs/paper/split",
+  "split_source": "outputs/paper/assignment/splits",
+  "full_source": "outputs/paper/assignment",
   "conditions": 48,
   "evaluation_replications": [
     10,

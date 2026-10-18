@@ -1,8 +1,8 @@
 {
   "version": "jmlr_statistical_baselines_v1",
-  "source_root": "results/jmlr_adaptive_search_v1",
+  "source_root": "outputs/paper/assignment",
   "verified_reference_root": "results/jmlr_verified_adaptive_v1",
-  "output_dir": "results/jmlr_statistical_baselines_v1",
+  "output_dir": "outputs/paper/assignment/splits",
   "alpha": "1/20",
   "caps": [
     "5/4",

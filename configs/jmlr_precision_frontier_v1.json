@@ -1,8 +1,8 @@
 {
   "version": "jmlr_precision_frontier_v1",
-  "output_dir": "results/jmlr_precision_frontier_v1",
-  "source_dir": "results/jmlr_release_capacity_v1",
-  "source_protocol": "results/jmlr_release_capacity_v1/frozen_protocol.json",
+  "output_dir": "outputs/paper/precision",
+  "source_dir": "outputs/paper/release",
+  "source_protocol": "outputs/paper/release/frozen_protocol.json",
   "law_ids": [
     "K64_balanced_moderate_ordered",
     "K64_skewed_weak_ordered",
