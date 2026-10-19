@@ -12,11 +12,14 @@ for _key in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS',
              'VECLIB_MAXIMUM_THREADS','NUMEXPR_NUM_THREADS'):
     os.environ[_key] = '1'
 
-from . import assignment, releases
+from . import assignment, certification, relevance, releases
 from . import analyses
 
 PROJECT = Path(__file__).resolve().parents[1]
-STUDIES = ('assignment','release','recovery','efficiency','split','precision','outcome','computation')
+CURRENT_STUDIES = ('assignment','release','certification','relevance','recovery',
+                   'efficiency','precision','outcome','computation')
+LEGACY_STUDIES = ('split',)
+STUDIES = CURRENT_STUDIES + LEGACY_STUDIES
 
 
 def _configuration(path):
@@ -47,7 +50,7 @@ def _guard_workspace(workspace,config,*,report_only=False):
         path.write_text(json.dumps(requested,indent=2)+'\n')
 
 
-def _run(study, workspace, config, data, limit=None):
+def _run(study, workspace, config, data, limit=None, rhc_data=None):
     workspace = Path(workspace).resolve()
     workspace.mkdir(parents=True,exist_ok=True)
     root = workspace/study
@@ -57,6 +60,10 @@ def _run(study, workspace, config, data, limit=None):
         return result
     if study in ('efficiency','recovery','split'):
         return analyses.run(workspace,study,limit=limit,config=config)
+    if study == 'certification':
+        return certification.run(workspace,limit=limit)
+    if study == 'relevance':
+        return relevance.run(workspace,rhc_data or 'data/rhc.csv',limit=limit)
     if study == 'release':
         if not (root/'frozen_protocol.json').exists():
             if not Path(data).is_file():
@@ -127,6 +134,10 @@ def _report(study,workspace,config):
     workspace=Path(workspace).resolve();root=workspace/study
     if study=='assignment':return assignment.report(workspace)
     if study in ('efficiency','recovery','split'):return analyses.report(workspace,study)
+    if study=='certification':return certification.report(
+        workspace,require_complete=config['profile']=='full-paper')
+    if study=='relevance':return relevance.report(
+        workspace,require_complete=config['profile']=='full-paper')
     if study=='computation':
         from experiments.jmlr_computation_v1_reporting import generate
         return generate(root,figures=False,require_complete=config['profile']=='full-paper')
@@ -143,15 +154,15 @@ def _report(study,workspace,config):
     raise ValueError('Unknown study')
 
 
-def smoke(workspace,config,data):
+def smoke(workspace,config,data,rhc_data='data/rhc.csv'):
     if config['profile']!='smoke':raise ValueError('Smoke requires configs/smoke.json')
     _guard_workspace(workspace,config)
     results={}
-    for study in STUDIES:
+    for study in CURRENT_STUDIES:
         # All dependent release blocks are small but include the complete
         # IHDP finite support. Original assignment K16 is checked as a prefix.
-        limit=1 if study in ('assignment','recovery','split','computation') else (2 if study=='efficiency' else None)
-        results[study]=_run(study,workspace,config,data,limit)
+        limit=1 if study in ('assignment','certification','relevance','recovery','computation') else (2 if study=='efficiency' else None)
+        results[study]=_run(study,workspace,config,data,limit,rhc_data)
         results[study+'_tables']=_report(study,workspace,config)
     receipt={'status':'smoke_complete','scientific_scope':'Execution checks only; full paper studies were not run',
              'studies':results,'plotting':'not run; optional paper plots require complete reported panels'}
@@ -163,9 +174,12 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     commands=parser.add_subparsers(dest='command',required=True)
     commands.add_parser('example',help='Run the principal full-sample SCA example')
-    data=commands.add_parser('prepare-data',help='Download/check public IHDP covariates (untracked)')
+    commands.add_parser('example-bounded',help='Run bounded-outcome export and reconstruction')
+    commands.add_parser('example-drift',help='Run mass-drift export and admission checks')
+    data=commands.add_parser('prepare-data',help='Download/check public IHDP and RHC inputs (untracked)')
     data.add_argument('--directory',default='data')
-    plots=commands.add_parser('plot',help='Render the current main-paper figures from complete reported outputs')
+    data.add_argument('--dataset',choices=('all','ihdp','rhc'),default='all')
+    plots=commands.add_parser('plot',help='Render current empirical figures or the retained computation diagnostic')
     plots.add_argument('study',choices=('efficiency','split','release','precision','computation','all'))
     plots.add_argument('--workspace',default='outputs/paper')
     plots.add_argument('--output-dir',default=None)
@@ -178,13 +192,18 @@ def main():
         command.add_argument('--workspace',default='outputs/smoke' if name=='smoke' else 'outputs/paper')
         command.add_argument('--config',default='configs/smoke.json' if name=='smoke' else 'configs/paper.json')
         command.add_argument('--data',default='data/ihdp_npci_1.csv')
+        command.add_argument('--rhc-data',default='data/rhc.csv')
         if name=='run':command.add_argument('--limit',type=int,help='Explicit incomplete prefix; never a full reproduction')
     args=parser.parse_args()
     if args.command=='example':
         runpy.run_path(str(PROJECT/'examples/synthetic.py'),run_name='__main__');return
+    if args.command=='example-bounded':
+        runpy.run_path(str(PROJECT/'examples/bounded_outcomes.py'),run_name='__main__');return
+    if args.command=='example-drift':
+        runpy.run_path(str(PROJECT/'examples/mass_drift.py'),run_name='__main__');return
     if args.command=='prepare-data':
         from .data import prepare_data
-        result=prepare_data(args.directory)
+        result=prepare_data(args.directory,args.dataset)
     elif args.command=='plot':
         from .plots import plot
         result=plot(args.study,args.workspace,output_dir=args.output_dir)
@@ -193,12 +212,13 @@ def main():
         result=generate(args.workspace,output_dir=args.output_dir)
     else:
         config=_configuration(args.config)
-        if args.command=='smoke':result=smoke(args.workspace,config,args.data)
+        if args.command=='smoke':result=smoke(args.workspace,config,args.data,args.rhc_data)
         else:
             _guard_workspace(args.workspace,config,report_only=args.command=='report')
             result={}
-            for study in (STUDIES if args.study=='all' else (args.study,)):
-                if args.command=='run':result[study]=_run(study,args.workspace,config,args.data,args.limit)
+            for study in (CURRENT_STUDIES if args.study=='all' else (args.study,)):
+                if args.command=='run':result[study]=_run(
+                    study,args.workspace,config,args.data,args.limit,args.rhc_data)
                 else:result[study]=_report(study,args.workspace,config)
     print(json.dumps(releases.exact.encode(result),indent=2,default=str))
 

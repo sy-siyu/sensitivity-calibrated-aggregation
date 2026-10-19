@@ -290,6 +290,43 @@ def _split(rows, method_grid, paired_rows, paired_grid, *, conditions=CONDITIONS
         'uncertainty': 'paired fixed-condition variance H^-2 sum_h s_h^2/n_h; descriptive fractions have no pooled-binomial interval'}
 
 
+def _current_relevance(method_rows, contrast_rows):
+    """Validate the current one-third, 4,320-dataset reporter tables."""
+    method_rows, contrast_rows = list(method_rows), list(contrast_rows)
+    if len(method_rows) != 6 or len(contrast_rows) != len(CONTRASTS):
+        raise ValueError('Current relevance tables contain duplicate or extra rows')
+    if any(_q(row['cap']) != CAP or row.get('selected_fraction') != '1/3'
+           for row in method_rows + contrast_rows):
+        raise ValueError('Current relevance tables require cap 3/2 and selected fraction 1/3')
+    methods = {row['procedure']: row for row in method_rows}
+    contrasts = {row['contrast']: row for row in contrast_rows}
+    if set(methods) != set('ABCDEF') or set(contrasts) != set(CONTRASTS):
+        raise ValueError('Current relevance tables require six procedures and eight contrasts')
+    numeric = ('mean', 'MCSE', 'analytic_Normal95_lower', 'analytic_Normal95_upper')
+    for procedure, row in methods.items():
+        if _int(row['conditions']) != 48 or _int(row['datasets']) != 4320:
+            raise ValueError('Current procedure table requires 48 conditions and 4,320 datasets')
+        for suffix in numeric:
+            value = float(row['compression_percent_'+suffix])
+            if not math.isfinite(value): raise ValueError('Nonfinite procedure summary')
+    for contrast, row in contrasts.items():
+        if (_int(row['conditions']) != 48 or _int(row['datasets']) != 4320
+                or sum(_int(row[key]) for key in ('wins','ties','losses')) != 4320):
+            raise ValueError('Current contrast table has an incomplete denominator')
+        for suffix in numeric:
+            value = float(row['difference_pp_'+suffix])
+            if not math.isfinite(value): raise ValueError('Nonfinite contrast summary')
+    total = sum(float(contrasts[name]['difference_pp_mean'])
+                for name in ('B-A','C-B','D-C','E-D','F-E'))
+    if not math.isclose(total, float(contrasts['F-A']['difference_pp_mean']),
+                        rel_tol=1e-11, abs_tol=1e-11):
+        raise ValueError('Current A--F signed decomposition does not close')
+    return ([methods[name] for name in 'ABCDEF'],
+            [contrasts[name] for name in CONTRASTS],
+            {'datasets': 4320, 'conditions': 48, 'selected_fraction': '1/3',
+             'accounting_exact': True})
+
+
 def _precision(rows, summaries, *, reps=range(100)):
     index, diagnostics = {}, {p: Counter() for p in PROFILES}
     for row in rows:
@@ -373,23 +410,24 @@ def _csv(path, rows):
 def generate(workspace, output_dir=None):
     """Write main-table CSVs only after all required complete panels validate.
 
-    Repeated methods/caps do not add datasets. Table3 includes all100 blocks
-    in each profile, regardless of admission. Stage increments remain signed.
+    Repeated methods/caps do not add datasets. Current manuscript Table5
+    includes all100 blocks in each profile, regardless of admission. Stage
+    increments remain signed.
     """
     workspace = Path(workspace).resolve()
     paths = {
         'assignment': 'assignment/tables/assignment_rows.csv',
         'efficiency': 'efficiency/tables/historical_rows.csv',
         'efficiency_summary': 'efficiency/tables/historical_primary_equal_weight_summary.csv',
-        'split': 'split/tables/dataset_rows.csv', 'split_methods': 'split/tables/methods_grid.csv',
-        'split_pairs': 'split/tables/paired_dataset_rows.csv', 'split_contrasts': 'split/tables/paired_grid.csv',
+        'relevance_methods': 'relevance/tables/ltt_methods.csv',
+        'relevance_contrasts': 'relevance/tables/ltt_contrasts.csv',
         'precision': 'precision/tables/analysis_replications.csv',
         'precision_summary': 'precision/tables/decomposition_summary.csv'}
     read = lambda name: _rows(workspace/paths[name])
     first, assignment = _assignment(read('assignment'))
     extra, efficiency_checks = _efficiency(read('efficiency'), read('efficiency_summary'), assignment)
-    methods, contrasts, split_checks = _split(read('split'), read('split_methods'),
-                                             read('split_pairs'), read('split_contrasts'))
+    methods, contrasts, split_checks = _current_relevance(
+        read('relevance_methods'), read('relevance_contrasts'))
     stages, increments, precision_checks = _precision(read('precision'), read('precision_summary'))
     outputs = {'table1_assignment_search.csv': first+extra, 'table2_split_procedures.csv': methods,
                'table2_split_contrasts.csv': contrasts, 'table3_precision_stages.csv': stages,
@@ -409,6 +447,7 @@ def generate(workspace, output_dir=None):
         'precision_scope': {'law_index': 0, 'law_id': 'K64_balanced_moderate_ordered', 'profiles': list(PROFILES),
             'm_ratio': 256, 'method': 'z_global', 'blocks_per_profile': 100, 'admission_filter': False,
             'I3': 'privileged true assignment and operational outcome CP bounds at actual certified transported budget'},
+        'historical_split_configuration': 'retained under explicitly named legacy configuration files; not used for current manuscript Table4',
         'scope': 'Numerical extraction of current main tables from complete public reporter outputs; no new inference or manuscript edits'}
     (destination/'manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True)+'\n', encoding='utf-8')
     return manifest

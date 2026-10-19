@@ -1,12 +1,12 @@
 # Sensitivity Calibration Under State Aggregation
 
-Code for **sensitivity-calibrated aggregation (SCA)**. SCA selects an outcome-blind grouping of a declared finite state space and certifies the resulting sensitivity distortion. Its principal workflow uses the **full assignment calibration sample**, a **Coupled Clopper–Pearson (CP)** distortion certificate, and complete search within a combined family of two fixed-tree pruning families and estimated-propensity contiguous partitions.
+Public code for **sensitivity-calibrated aggregation (SCA)** and the current JMLR manuscript. SCA selects an outcome-blind grouping of a declared finite state space and certifies its sensitivity distortion. The principal procedure uses the full assignment-calibration sample, a Coupled Clopper–Pearson (CP) certificate, and complete search over two fixed-tree pruning families plus estimated-propensity contiguous partitions.
 
-Baselines and component ablations are available through the experiment runners.
+The public workflow now includes the retained finite-sample certification analysis, the five-fraction empirical-relevance study and observed RHC illustration, and aggregate-only binary or bounded-outcome inference. Historical split-study definitions remain versioned but are not silently reused as the current paper results.
 
 ## Install
 
-Python **3.13** is the tested environment; macOS and Linux are the supported execution targets (the process runners use POSIX locks). No GPU is needed. Use a checkout for reproduction so that the versioned configurations and examples are available:
+Python **3.13** is the tested environment; macOS and Linux are supported. No GPU is needed.
 
 ```sh
 git clone https://github.com/sy-siyu/sensitivity-calibrated-aggregation.git
@@ -17,11 +17,11 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
-The numerical dependencies are pinned: NumPy, SciPy and python-flint (FLINT/Arb interval arithmetic). Main-paper plotting is optional: install it with `python -m pip install -e '.[plots]'`.
+NumPy, SciPy and python-flint are pinned. Main-paper plotting is optional: `python -m pip install -e '.[plots]'`.
 
-## Use SCA
+## Select an aggregation
 
-Supply integer calibration counts `N[s]` (state size) and `T[s]` (treated count), including declared states with zero observations:
+Supply integer state sizes `N[s]` and treated counts `T[s]`, including declared states with zero observations:
 
 ```python
 from sca import SCA
@@ -33,96 +33,139 @@ print(fit.partition, fit.certificate, fit.status)
 print(fit.optimization_completed)
 ```
 
-The default calibration error is `1/40`, compatible with the outcome allocation below. Set `alpha` explicitly for another allocation, for example `SCA(alpha="1/20")` for assignment-only analysis.
+The default SCA calibration error is `1/40`. Set it explicitly when another assignment-only allocation is intended, for example `SCA(alpha="1/20")`. This parameter remains the **assignment-calibration error**; it is not silently reinterpreted as the overall outcome-inference error.
 
-Run the short synthetic example, including an independent binary-outcome cohort and aggregate-only analysis:
-
-```sh
-python -m sca_reproduction example
-```
-
-SCA supports two **different operating objectives** over the same realized combined family \(\mathcal F_n\):
+SCA supports two objectives over the same realized family:
 
 | Objective | Call | Optimization |
 |---|---|---|
-| Fixed-cap count minimization | `SCA().fit(N, T, cap="3/2")` | Minimize \(|\pi|\) subject to \(U_n^v(\pi)\le c\). |
-| Fixed-capacity certificate minimization | `SCA().fit(N, T, capacity=2)` | Minimize \(U_n^v(\pi)\) subject to \(|\pi|\le B\). |
+| Fixed-cap count minimization | `SCA().fit(N, T, cap="3/2")` | Minimize the number of groups subject to certificate at most the cap. |
+| Fixed-capacity certificate minimization | `SCA().fit(N, T, capacity=2)` | Minimize the certificate over partitions with at most two groups. |
 
-They can return different partitions. A partition belongs to one constituent family; tree branches are never mixed across families. Complete search means optimization within this stated family, not all partitions. Ties use deterministic local recurrence rules.
+The objectives can return different partitions. A partition belongs to one constituent family; tree branches are never mixed across families. “Complete search” means complete within this declared family, not over every set partition. Check `status` and `optimization_completed`: a mathematical infinite envelope, an unresolved numerical calculation, and a completed finite result are different outcomes.
 
-Check the returned status and completion metadata. A completed infinite envelope is different from unresolved numerical work. Threshold rejection bounds are not completed upper certificates. Safe identity fallback does not prove count optimality, and identity is unavailable as a capacity fallback when `B < K`. At fixed capacity, `fit.admissible(raw_budget="2", aggregate_budget="3")` additionally checks the completed certificate and count against the release constraint. Choose the raw sensitivity budget and aggregate ceiling before examining outcomes.
+## Infer outcomes and release aggregates
 
-An independent binary-outcome cohort can be exported using `fit.release(out_N, out_T, treated_successes)`. `sca.analyze_release(artifact)` uses only anonymous aggregate counts, projected bounds, completed cell distortions and confidence metadata. Every selected group is included, including empty treated groups. The standard allocation is calibration `1/40`, raw outcomes `1/80`, aggregate outcomes `1/80`. Assignment validity holds simultaneously across candidate partitions/capacities on its common event. Outcome guarantees retain their pointwise scope for a prespecified capacity, profile and cohort size; admission does not imply nominal conditional coverage.
+The original binary API remains available:
 
-The calibration and outcome cohorts must be independent samples sharing the same population assignment law \(P_{S,A}\), including both state frequencies and conditional treatment probabilities. Their observed counts need not match. Sharing only \(P(A\mid S)\) is insufficient because changes in state frequencies can change aggregate propensities.
+```python
+from sca import analyze_release
 
-## Reproduce the experiments
+artifact = fit.release(outcome_N, outcome_T, treated_successes)
+analysis = analyze_release(artifact)
+```
 
-The runners generate counts, splits, pilot proposals, confidence regions, certificates and outcome cohorts in an ignored output workspace.
+This legacy branch still exports every selected group, including groups with no treated observations, and reconstructs from anonymous aggregate counts and certified summaries.
 
-First prepare the public covariates needed for the capacity and precision studies:
+For general confidence allocation, bounded outcomes, mass drift, and analyst reconstruction, use ordinary treated counts and treated-outcome sums—no research-internal dictionary is required:
+
+```python
+from fractions import Fraction
+from sca import SCA, analyze_outcome_release
+
+fit = SCA().fit((80, 80), (24, 56), cap="10")
+artifact = fit.release_outcomes(
+    outcome_treated=(30, 40),
+    treated_outcome_sums=(Fraction(25), Fraction(65)),
+    branch="bounded",
+    outcome_bounds=("-2", "3"),
+    overall_alpha="1/20",
+    reporting_capacity=1,
+    sensitivity_ceiling="100",
+    decimal_precision=40,
+)
+analysis = analyze_outcome_release(artifact)
+```
+
+`confidence_allocation(...)` exposes the allocation rule. With no component overrides, `overall_alpha` is split as one half for assignment calibration and one quarter for each raw and aggregate outcome family. An explicit component allocation must agree with the SCA calibration error used by `fit` and fit within the declared overall error.
+
+The `binary` branch uses exact CP intervals and the sharp binary population formulas. The `bounded` branch requires prespecified finite outcome bounds, uses simultaneous Hoeffding mean intervals, and returns valid mean-based outer enclosures that need not be sharp for a nonbinary distribution. Calculations are intersected on the normalized `[0,1]` scale and then mapped exactly to the requested outcome scale. The release records the outward decimal precision; reconstruction reuses it and rejects an incompatible override.
+
+`mass_drift=zeta` permits supplied state-mass drift satisfying `1-zeta <= p'_s/p_s <= 1+zeta` while statewise propensities remain unchanged. The implementation projects the corrected target mass and propensity ranges and inflates nonsingleton certificates before checking admission. `release_outcomes` enforces both the declared reporting capacity and corrected sensitivity ceiling before returning an artifact.
+
+The artifact contains anonymous group aggregates and projected ranges, not state memberships or the provider’s raw calibration region. Analyst reconstruction therefore verifies internal arithmetic and admission from the release, but still trusts the provider to have used the promised records, outcome-blind selection, projections, and certificates. Coverage is an unconditional fixed-analysis repeated-sampling guarantee; with admission it controls the joint event “admitted and missed,” not coverage conditional on admission.
+
+Calibration and outcome cohorts must be independent. With `mass_drift="0"`, they share the complete assignment law `P(S,A)`, including state frequencies and conditional treatment propensities; matching only `P(A|S)` is insufficient. A positive supplied drift bound relaxes the state-frequency equality under its documented coordinatewise ratio constraint while keeping statewise propensities fixed.
+
+Run the three small user-facing examples:
+
+```sh
+python -m sca_reproduction example
+python -m sca_reproduction example-bounded
+python -m sca_reproduction example-drift
+```
+
+## Reproduce the studies
+
+Prepare both public inputs. Downloads are checksum-verified and ignored by Git:
 
 ```sh
 python -m sca_reproduction prepare-data --directory data
 ```
 
-This downloads the CEVAE IHDP CSV and checks its SHA-256 before use. The original treatments and outcomes are ignored. See [data construction](docs/DATA.md) for variables, exact ties and the finite benchmark population.
+IHDP is used only as a covariate reference population for a semi-synthetic benchmark. RHC is an observed treatment/outcome illustration with a frozen split and preprocessing rule. See [data sources, scopes, and terms](docs/DATA.md).
 
-A bounded execution check covers generation, certification, both search objectives, aggregate-only outcomes, the comparison adapters and numerical table generation:
+Start with the bounded execution check. It exercises every current runner but is not scientific evidence for the full panels:
 
 ```sh
 python -m unittest discover -s tests -v
-python -m sca_reproduction smoke --workspace outputs/smoke
+python -m sca_reproduction smoke --workspace outputs/smoke \
+  --data data/ihdp_npci_1.csv --rhc-data data/rhc.csv
 ```
 
-`configs/smoke.json` runs a small execution check. Use `configs/paper.json` for the full experimental panels.
+The current full workflow is ordered as follows:
 
-| Paper experiment / purpose | Configuration | Full run command (after prerequisites) |
+| Study | Purpose and prerequisite | Command |
 |---|---|---|
-| Assignment calibration, search-family ablations, same-family oracle diagnostics; split-LTT baseline and development fraction choice | `configs/jmlr_verified_pipeline_v1.json`, `configs/jmlr_statistical_baselines_v1.json` | `python -m sca_reproduction run assignment` |
-| Capacity-constrained SCA and equal-mass propensity baseline; independent outcome cohorts | `configs/jmlr_release_capacity_v1.json` | `python -m sca_reproduction run release` |
-| Confidence allocation / certificate-construction ablations, occupancy and oracle-gap diagnostics | `configs/jmlr_efficiency_gap_v1.json` | `python -m sca_reproduction run efficiency` (requires assignment and release) |
-| Independent nested recovery paths | same efficiency configuration | `python -m sca_reproduction run recovery` |
-| Held-out certification, stopping and pilot-proposal/order ablations; split-LTT baseline | `configs/jmlr_split_ablation_v1.json` | `python -m sca_reproduction run split` (requires assignment) |
-| Compression–distortion–precision operating curves | `configs/jmlr_precision_frontier_v1.json` | `python -m sca_reproduction run precision` (requires release) |
-| Outcome inference, raw stratification and pooled-raw references | `configs/jmlr_outcome_inference_v1.json` | `python -m sca_reproduction run outcome` |
-| Fresh sequential computational scaling and repeated-cohort costs | `configs/jmlr_computation_v1.json` | `python -m sca_reproduction run computation` |
+| `assignment` | Fresh 4,800-dataset assignment panel | `python -m sca_reproduction run assignment` |
+| `release` | Capacity-constrained releases; requires IHDP | `python -m sca_reproduction run release` |
+| `certification` | Positive-margin same-family oracles and sparse-mixture lower bound; requires assignment | `python -m sca_reproduction run certification` |
+| `relevance` | Five LTT fractions, coherent A–F evaluation, global logit clustering, RHC; requires assignment, release, and RHC | `python -m sca_reproduction run relevance` |
+| `recovery`, `efficiency` | Retained recovery and certificate diagnostics; require assignment/release as documented | `python -m sca_reproduction run recovery`, then `run efficiency` |
+| `precision` | Compression–distortion–precision curves; requires release | `python -m sca_reproduction run precision` |
+| `outcome` | Independent binary outcome panel and raw references | `python -m sca_reproduction run outcome` |
+| `computation` | Fresh sequential scaling diagnostics | `python -m sca_reproduction run computation` |
 
-All commands default to `--workspace outputs/paper --config configs/paper.json`. To execute the dependency sequence and generate numerical summaries/tables:
+All commands default to `--workspace outputs/paper --config configs/paper.json`. `run all` and `report all` follow the current sequence:
 
 ```sh
 python -m sca_reproduction run all --workspace outputs/paper
 python -m sca_reproduction report all --workspace outputs/paper
+python -m sca_reproduction paper-tables --workspace outputs/paper
 ```
 
-For a single study, use `report STUDY` with the same workspace. Full reporters require complete panels; bounded runs produce partial diagnostics. Outputs include input/protocol files, per-dataset records, `tables/*.csv`, and JSON summaries.
-
-The [paper-to-code map](docs/PAPER_RESULTS.md) identifies the current three main tables and five main figures by number and stable LaTeX label. After the required complete reports exist, generate them with:
+Generate the current empirical Figures 2–5 individually:
 
 ```sh
-python -m pip install -e '.[plots]'
-python -m sca_reproduction paper-tables --workspace outputs/paper
-python -m sca_reproduction plot all --workspace outputs/paper
+python -m sca_reproduction plot efficiency --workspace outputs/paper
+python -m sca_reproduction plot split --workspace outputs/paper
+python -m sca_reproduction plot release --workspace outputs/paper
+python -m sca_reproduction plot precision --workspace outputs/paper
 ```
 
-The commands read completed reports and write `paper_tables/` and `paper_figures/` inside the workspace. Plot one study with `plot efficiency`, `plot split`, `plot release`, `plot precision`, or `plot computation`.
+`plot split` reads the current `relevance` report when present. `plot computation` remains available as a retained computational diagnostic, but the current manuscript does not contain a computational-cost figure. The legacy `run split` command remains separately selectable for historical reproduction and is intentionally excluded from `run all`.
 
-See [reproduction details](docs/REPRODUCTION.md) for seed schedules, panel sizes, restart behavior, numerical settings, resource requirements and validation scope.
+Exact rational rows are stored in JSON outputs; CSV summaries are rounded/display-oriented. Reporters refuse to treat a bounded prefix as a completed full panel. See [reproduction details](docs/REPRODUCTION.md) and the [paper-to-code map](docs/PAPER_RESULTS.md).
 
-## Baselines, ablations and references
+## Current comparisons and scope
 
-| Role | Implementations retained for the experiments |
+| Role | Retained implementation |
 |---|---|
-| Proposed procedure | **SCA**: full sample, principal Coupled CP certificate, complete combined-family search. |
-| Baselines | Split LTT (with its original stopping rule); whole-state equal-calibration-mass grouping along estimated propensity order. |
-| Ablations | Held-out coupled certification; first-failure stopping; saved pilot-proposal restriction; pilot-order family; restricted tree/contiguous families; independent-CP and allocation/pooled-assignment certificate constructions. |
-| Outcome references | Raw stratification and pooled raw, which retain stronger raw-state information. Pooled raw can reuse aggregation/pooling and is not an aggregate-only competitor. |
-| Oracle diagnostics | Same-realized-family choices using true population distortion/counts. Truth is evaluated after operational selection and never enters SCA certification or selection. |
+| Proposed procedure | Full-sample SCA, principal Coupled CP certificate, complete combined-family search. |
+| LTT comparison | Five development fractions `{1/10,1/5,1/3,1/2,2/3}`; the globally selected `1/3` fraction is frozen before the coherent 4,320-dataset A–F evaluation. |
+| Capacity baselines | Whole-state equal-calibration-mass grouping and globally optimal one-dimensional clustering of smoothed propensity logits; certification remains Coupled CP. |
+| Observed illustration | Frozen RHC preprocessing and 4,014/1,721 calibration/outcome split; the primary capacity-four result abstains rather than releasing an inadmissible interval. Twenty additional splits are dependent stability checks. |
+| Oracle diagnostics | Population truth is evaluated only after operational selection and never enters SCA certification or selection. |
+| Excluded explorations | Šidák, one-sided, and pilot-pooled alternatives are not in the default paper workflow. |
 
-Baselines and ablations are configured through the experiment runners. The [procedure mapping](docs/REPRODUCTION.md#procedure-definitions) connects their output identifiers to the paper labels.
+The optional exact command below verifies a five-state same-cap counterexample at cap `19/10`: it independently enumerates all 52 set partitions and all 16 contiguous cuts. It is a small mathematical fixture, not a paper experiment.
+
+```sh
+python -m experiments.jmlr_five_state_counterexample_v1
+```
 
 ## Repository scope and attribution
 
-`sca/` provides the public interface, `experiments/` implements the numerical routines and experiments, and `sca_reproduction/` manages data generation, execution and reporting. Configurations, tests, examples and documentation are in the corresponding directories.
+`sca/` is the public interface, `experiments/` contains numerical kernels and study code, and `sca_reproduction/` manages public data, execution, and reporting. Source, versioned configurations, tests, examples, and documentation are tracked. Generated datasets, result archives, checkpoints, manuscript files, and submission records remain outside version control.
 
-Generated data, results and figures remain outside version control. The project is licensed under the [MIT License](LICENSE); see [licensing details](LICENSING.md) and [third-party attribution](THIRD_PARTY_NOTICES.md).
+The project is licensed under the [MIT License](LICENSE). Downloaded data and dependencies retain their own terms; see [licensing details](LICENSING.md) and [third-party attribution](THIRD_PARTY_NOTICES.md).

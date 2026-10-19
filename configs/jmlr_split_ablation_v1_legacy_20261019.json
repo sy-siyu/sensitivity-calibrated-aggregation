@@ -1,0 +1,87 @@
+{
+  "version": "jmlr_split_ablation_v1",
+  "output_dir": "outputs/paper/split",
+  "split_source": "outputs/paper/assignment/splits",
+  "full_source": "outputs/paper/assignment",
+  "conditions": 48,
+  "evaluation_replications": [
+    10,
+    100
+  ],
+  "evaluation_datasets": 4320,
+  "development_datasets_preserved": 480,
+  "mass_mode": "unknown_mass",
+  "alpha": "1/20",
+  "pilot_fraction": "1/5",
+  "caps": [
+    "5/4",
+    "3/2",
+    "2"
+  ],
+  "primary_cap": "3/2",
+  "procedures": {
+    "A": "Imported split LTT, saved proposals and first-failure stopping",
+    "B": "Imported split coupled, saved proposals and first-failure stopping",
+    "C": "Same held-out coupled region, all saved proposals, fewest certified cells",
+    "D": "Same full-data coupled region as F, all saved proposals, fewest certified cells",
+    "E": "Same full-data coupled region, complete two-tree/pilot-order contiguous union",
+    "F": "Imported full-data coupled complete two-tree/full-data-order contiguous union"
+  },
+  "added_procedure_cap_records": 38880,
+  "imported_procedure_cap_records": 38880,
+  "total_procedure_cap_records": 77760,
+  "candidate_handling": "Retain exact saved partitions, indices, ordering and infinite pilot scores; pilot scores are not certificates",
+  "proposal_tie": "Fewest cells, then earliest saved proposal index; identity is always safe",
+  "complete_search_tie": "Existing verified pipeline select_families combined selector, unchanged local and family return rules; no global secondary-certificate-optimality claim",
+  "cell_certification": "Existing exact coupled principal CP machinery; reuse compatible saved full/boundary records and proved above-2 rejection lower bounds; no pooled alternative",
+  "unresolved": "Keep numerical failure separate from mathematical infinity and rigorous rejection; safe certified candidate or identity does not establish the unresolved count optimum",
+  "truth": "Evaluate selected partitions after selection under the authoritative verified pipeline declared exact nominal law",
+  "contrasts": [
+    "C-B",
+    "D-C",
+    "E-D",
+    "F-E",
+    "C-A",
+    "F-C",
+    "F-A",
+    "B-A"
+  ],
+  "compression_pp": "100*(1-cells/K)",
+  "accounting_identity": "F-A = (B-A)+(C-B)+(D-C)+(E-D)+(F-E), checked per dataset and cap in exact rational arithmetic",
+  "structural_checks": [
+    "C cells <= B cells",
+    "E cells <= D cells"
+  ],
+  "uncertainty": {
+    "condition": "90 paired datasets; pointwise Student 95% mean intervals",
+    "fixed_grid": "Equal weights over 48 conditions; variance = sum_h(s_h^2/n_h)/48^2; approximate normal 95% Monte Carlo interval",
+    "subgroup": "Same fixed-grid formula, equally weighted constituent conditions",
+    "binary": "Per-condition two-sided 95% Clopper-Pearson intervals; do not pool heterogeneous conditions as one binomial",
+    "scope": "Procedures and caps repeat datasets; no extra replications or adaptive best-of-six guarantee"
+  },
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 1000000
+  },
+  "execution": {
+    "workers": 4,
+    "native_threads": 1,
+    "forecast_safety_factor": 1.5,
+    "cell_cache_scope": "Per dataset and saved region; context includes integer counts, allocation, root policy and exact endpoints; full-data cache shared by D and E",
+    "timing_scope": "Additional computation with saved region/cell reuse; not cold full-procedure speed comparisons"
+  },
+  "preflight": [
+    "K16_balanced_moderate_ordered_r1000",
+    "K16_skewed_moderate_permuted_r250",
+    "K64_balanced_moderate_ordered_r4000",
+    "K64_skewed_weak_ordered_r250",
+    "K64_skewed_weak_permuted_r4000"
+  ],
+  "preflight_replication": 0,
+  "interpretation": "Retrospective matched ablation; fraction 1/5 was selected for LTT, not optimally tuned for C; sequence decomposition is not unique causal attribution",
+  "new_assignment_draws": 0
+}

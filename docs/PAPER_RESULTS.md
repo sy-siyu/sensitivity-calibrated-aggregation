@@ -1,102 +1,132 @@
-# Paper results and reproduction map
+# Current paper results and code map
 
-Configurations, commands and output fields for the main tables and figures in **Sensitivity Calibration Under State Aggregation**.
+This map follows the current JMLR manuscript after the 2026-10-19 presentation pass. Stable LaTeX labels are authoritative if later edits renumber an item. The current empirical items are Tables **3–5** and Figures **2–5**. Figure 1 is the conceptual provider–analyst pipeline and is not generated from an experimental report.
 
-See the [README](../README.md) for the SCA workflow and [procedure definitions](REPRODUCTION.md#procedure-definitions) for baseline and ablation identifiers.
+The public output basenames `table1_*`, `table2_*`, and `table3_*` are retained for backward compatibility; they map to manuscript Tables 3, 4, and 5 below.
 
 ## Complete execution
 
-From the installed checkout, run the following commands in a fresh workspace:
+From an installed checkout:
 
 ```sh
-git checkout paper-reproduction-2026-10-19-v2
 python -m pip install -e '.[plots]'
-python -m sca_reproduction prepare-data --directory data
-for study in assignment release recovery efficiency split precision computation; do
-  python -m sca_reproduction run "$study" --workspace outputs/paper --config configs/paper.json
-done
-for study in assignment release recovery efficiency split precision computation; do
-  python -m sca_reproduction report "$study" --workspace outputs/paper --config configs/paper.json
-done
+python -m sca_reproduction prepare-data --directory data --dataset all
+python -m sca_reproduction run all --workspace outputs/paper
+python -m sca_reproduction report all --workspace outputs/paper
 python -m sca_reproduction paper-tables --workspace outputs/paper
-python -m sca_reproduction plot all --workspace outputs/paper
+for study in efficiency split release precision; do
+  python -m sca_reproduction plot "$study" --workspace outputs/paper
+done
 ```
 
-These commands follow the dependencies for the main tables and figures. Precision reuses release blocks; efficiency uses assignment, release and recovery outputs. Full execution can take many CPU-hours and substantial storage; see [reproduction details](REPRODUCTION.md).
+Full execution can take many CPU-hours and substantial storage. `smoke` checks execution only and cannot supply these paper outputs. All paths below are relative to `outputs/paper/`.
 
-All output paths below are relative to `outputs/paper/`. The figure command writes PDF, PNG and `*_coordinates.csv` files to `paper_figures/`. The table command requires the reports for all three tables and writes CSV files and a manifest to `paper_tables/`. Both commands read completed reports.
+Exact rational evidence remains in generated JSON artifacts. Publication tables and figure-coordinate CSVs contain display floats/rounding. The table and plot assemblers validate complete denominators before writing output and never launch experiments or recompute uncertainty.
 
 ## Main tables
 
-| Paper item and labels | Configuration and execution | Generated output and exact extraction |
+| Current paper item | Public prerequisites | Generated table and source |
 |---|---|---|
-| **Table 1 — Search and certification ablations.** Labels: `tab:larger-support`, `tab:efficiency-procedures`. | `configs/jmlr_verified_pipeline_v1.json`, `configs/jmlr_efficiency_gap_v1.json`. Run/report assignment; run release, recovery and efficiency; report efficiency. Its full reporter validates all three efficiency components. | `paper_tables/table1_assignment_search.csv`. First three rows: `assignment/tables/assignment_rows.csv`, filter `mode=unknown_mass`, `cap=3/2`, families `fixed`, `contiguous`, `combined`. Use `method=coupled` for compression/oracle gap/recoveries; pair `independent` with `coupled` for coupling gains. Last two rows: `efficiency/tables/historical_primary_equal_weight_summary.csv`, procedures `allocation_control`, `pooled_alternative`. |
-| **Table 2 — Data allocation and search ablations at cap 3/2.** `tab:statistical-baseline`. | `configs/jmlr_statistical_baselines_v1.json`, `configs/jmlr_split_ablation_v1.json`. Run assignment, then `python -m sca_reproduction run split`; `python -m sca_reproduction report split`. | `paper_tables/table2_split_procedures.csv`, from `split/tables/methods_grid.csv`: `scope=all`, `cap=3/2`, procedures A–F, field `compression_pp_mean`. `paper_tables/table2_split_contrasts.csv` supplies its paired comparisons. |
-| **Table 3 — Five-stage global width decomposition.** `tab:precision-stages`. | `configs/jmlr_release_capacity_v1.json`, `configs/jmlr_precision_frontier_v1.json`. Run release, then `python -m sca_reproduction run precision`; `python -m sca_reproduction report precision`. | `paper_tables/table3_precision_stages.csv`, from `precision/tables/decomposition_summary.csv`: balanced law (`law_index=0`), `cap=3/2`, `m_ratio=256`, `transport=global`, profiles `aligned` and `alternating`; fields `I0_width_mean` through `I4_width_mean`. |
+| **Table 3 — Search and certification ablations.** Labels `tab:larger-support`, `tab:efficiency-procedures`. | Assignment; release, recovery, and efficiency. | `paper_tables/table1_assignment_search.csv`. The first three rows derive from `assignment/tables/assignment_rows.csv`; the confidence controls derive from `efficiency/tables/historical_primary_equal_weight_summary.csv`. |
+| **Table 4 — Data allocation and search ablations at cap 3/2.** Label `tab:statistical-baseline`. | Assignment and current `relevance`. | `paper_tables/table2_split_procedures.csv` and `table2_split_contrasts.csv`, assembled from `relevance/tables/ltt_methods.csv` and `ltt_contrasts.csv`. |
+| **Table 5 — Five-stage global width decomposition.** Label `tab:precision-stages`. | Release and precision. | `paper_tables/table3_precision_stages.csv` and `table3_precision_increments.csv`, from `precision/tables/decomposition_summary.csv` and exact replication rows. |
 
-For Table 1, compression is `100*(K-count)/K` (or `100*compression`); coupling gain is `100*(count_independent-count_coupled)/K` **within the same dataset and family**; oracle gap is `100*(count-oracle_count)/K`. The assignment `oracle_gap` field is a raw count difference, not already normalized. Recoveries count equality with that family's population-oracle count. For the confidence controls, use `100*mean` for metrics `compression` and `normalized_count_gap`, and count `count_recovered` in the primary historical rows. The primary filter is unknown masses and cap `3/2`; do not mix secondary caps. All point estimates weight the 48 conditions equally, each with 100 datasets (4,800 total). Efficiency contrast uncertainty uses 100 replication-index averages of the paired within-condition differences and normal 95% intervals.
+### Table 3 interpretation
 
-Table 2 uses **evaluation replications 10–99 only**: 90 per condition, 4,320 datasets. Separate development replications 0–9 select the pilot fraction from `1/5` and `1/2`; evaluation uses the frozen development choice. A is Split LTT; B is held-out coupled/first failure; C inspects all held-out pilot proposals; D uses the full sample on that list; E searches the complete pilot-order family; F is SCA with full-data order. Compression already uses percentage points. Equal-condition aggregate normal intervals use variance `48^-2 * sum_h(s_h^2/90)`; condition intervals use paired Student95. Table 1 includes all 100 replications, so its SCA mean need not equal Table 2's 90-replication mean.
+The assignment rows use unknown masses, cap `3/2`, all 48 conditions and 100 replications per condition (4,800 datasets). Compression is `100*(K-count)/K`; coupling gain is the paired `100*(count_independent-count_coupled)/K`; oracle gap is `100*(count-oracle_count)/K` in the same realized family. Do not treat the raw assignment `oracle_gap` count as already normalized.
 
-Table 3 uses all 100 balanced-law blocks, without admission filtering. I0 is the raw population interval at G; I1 uses true aggregate assignment/outcomes at true transported budgets; I2 uses certified budgets; I3 uses true assignment singleton boxes with **the operational outcome CP boxes and certified budgets**; I4 is the aggregate-only analyst enclosure. `paper_tables/table3_precision_increments.csv` retains the signed, sequence-dependent increments and negative-increment counts; I3 is not operational inference. `G*U`, not the ceiling `G*c`, determines inference.
+The Allocation control and Fixed-group pooled rows keep observations, realized families, order, and cap fixed. Their uncertainty comes from the retained efficiency reporter’s replication-index condition averages. Population truth is diagnostic and never enters operational selection.
+
+### Table 4 interpretation
+
+The development panel contains 480 datasets and selects `1/3` from `{1/10,1/5,1/3,1/2,2/3}`. Table 4 uses only evaluation replications 10–99: 90 per condition and 4,320 datasets total. Current rounded compression percentages are A–F: `14.47, 8.78, 9.34, 14.65, 22.72, 24.20`. The paired F−A contrast is `9.73 [9.57, 9.89]` percentage points.
+
+The current report is generated by `relevance`; the immutable legacy split configurations are not substituted. Equal-condition intervals use the fixed-condition paired design. The first four signed increments depend on the specified sequence and are not separately identified causal effects.
+
+### Table 5 interpretation
+
+Table 5 uses all 100 balanced-law blocks for the aligned and alternating profiles, with no admission filtering. `I0` is the raw population interval at `G`; `I1` uses true aggregate assignment/outcomes at true transported budgets; `I2` uses certified budgets; `I3` combines true assignment singleton boxes with operational outcome CP boxes and certified budgets; `I4` is aggregate-only analyst reconstruction. The signed stage increments may be negative and are sequence-dependent. `G*U`, not the ceiling `G*c`, determines inference.
 
 ## Main figures
 
-### Figure 1 — Oracle-count inflation and homogeneous recovery (`fig:efficiency`)
+### Figure 2 — Oracle-count barrier and homogeneous recovery
 
-Configuration: `configs/jmlr_efficiency_gap_v1.json`, with assignment and release prerequisites. Execute `python -m sca_reproduction run recovery`, `python -m sca_reproduction run efficiency`, then `python -m sca_reproduction report efficiency`. Generate with:
+Label: `fig:efficiency`. Generate with:
 
 ```sh
 python -m sca_reproduction plot efficiency --workspace outputs/paper
 ```
 
-Output: `paper_figures/statistical_efficiency.{pdf,png}`. Left: `efficiency/tables/historical_rows.csv`, filter `procedure=original`, `mass_mode=unknown_mass`, `cap=3/2`; x=`oracle_margin_log`, y=`minimax_log_inflation`, all 4,800 datasets. The latter is the log inflation of the **capacity-minimax certificate at the population oracle count**, not `threshold_log_inflation` or the threshold-selected map's `certificate_inflation_log`. Right: `efficiency/tables/recovery_condition_summary.csv`, `law_id=homogeneous`, `mass_mode=unknown_mass`, all three procedures and all 12 sizes; plot `certified_mean` and `certified_cp95_lower/upper`. Each size has the same 300 independent nested paths. The 90% line and connected grid points do not define an exact sample-complexity threshold. `recovery_grid_crossings.csv` records the empirical crossings; the 1,900 necessary and three-million sufficient analytical references have different scopes.
+Output: `paper_figures/statistical_efficiency.{pdf,png}` plus `statistical_efficiency_coordinates.csv`.
 
-### Figure 2 — Paired compression contrasts (`fig:split-search-contrasts`)
+The left panel plots the 4,800 cap-`3/2` SCA points from `efficiency/tables/historical_rows.csv`: population oracle log margin against capacity-minimax certificate inflation at the oracle count. The right panel plots unknown-mass homogeneous one-cell recovery over 300 independent nested paths for three confidence constructions. The 90% line and connected evaluated sizes do not define an analytical sample-complexity threshold.
 
-Configuration/prerequisite: Table 2. Execute `python -m sca_reproduction run split` and `python -m sca_reproduction report split`, then:
+The separate positive-margin oracle calculation is reported by `certification`; it is discussed in the same manuscript section but is **not plotted in Figure 2**.
+
+### Figure 3 — Paired compression contrasts
+
+Label: `fig:split-search-contrasts`. Generate with:
 
 ```sh
 python -m sca_reproduction plot split --workspace outputs/paper
 ```
 
-Output: `paper_figures/split_search_contrasts.{pdf,png}`. Input: `split/tables/paired_grid.csv`, `scope=all`, `cap=3/2`; contrasts `C-B`, `D-C`, `E-D`, `F-E`, `C-A`, `F-C`, `F-A`. Plot `difference_pp_mean` with `difference_pp_analytic_Normal95_lower/upper`. Positive is left minus right. The first four follow the specified sequence, not unique causal component effects. The denominator remains 90 paired evaluation datasets in each of 48 equally weighted conditions. Condition/dataset contrasts and stopping diagnostics are in `paired_conditions.csv`, `paired_dataset_rows.csv`, `stopping_grid.csv` and `stopping_rows.csv`.
+Output: `paper_figures/split_search_contrasts.{pdf,png}`. When `relevance/` exists, plotting reads `relevance/tables/ltt_contrasts.csv`. Every point uses 48 conditions × 90 paired evaluation datasets. Positive values favor the named left procedure. The display includes `C-B`, `D-C`, `E-D`, `F-E`, `C-A`, `F-C`, and `F-A` with pointwise normal Monte Carlo intervals.
 
-### Figure 3 — Reporting capacity, certificates and true distortion (`fig:release-capacity`)
+### Figure 4 — Reporting capacity, certificates, and true distortion
 
-Configuration: `configs/jmlr_release_capacity_v1.json`; prerequisite: checksum-verified public IHDP covariates. Execute `python -m sca_reproduction run release` and `python -m sca_reproduction report release`, then:
+Label: `fig:release-capacity`. Generate with:
 
 ```sh
 python -m sca_reproduction plot release --workspace outputs/paper
 ```
 
-Output: `paper_figures/release_capacity.{pdf,png}`. Input: `release/tables/calibration_summary.csv`, all three laws and all capacities; methods `verified_capacity` (SCA) and `equal_calibration_mass` (same-capacity baseline). Plot `certificate_mean`, `true_distortion_mean`, `oracle_distortion_mean` and their `*_ci95_lower/upper`; annotate `n_admitted` out of `admitted_n`. Use the calibration table to avoid duplicating assignment results across profiles/cohorts. Each law/capacity has 100 independent blocks; continuous bars are normal95 and individual admission rates use CP95. The budget is G=2, aggregate ceiling 3, hence certificate threshold 1.5. Capacity oracles are diagnostics, and identity is unavailable as a smaller-capacity fallback.
+Output: `paper_figures/release_capacity.{pdf,png}`. Inputs are `release/tables/calibration_summary.csv`, all three laws, all five capacities, and 100 independent blocks per law. It plots **SCA and the equal-mass baseline only**, with their completed certificate, true selected distortion, same-family SCA population oracle, and admission counts. The threshold is `Lambda_max/G = 1.5`.
 
-### Figure 4 — Empirical minimum-count operating curves (`fig:precision-operating-curves`)
+The stronger globally optimized propensity-logit clustering baseline is not a curve in Figure 4. Its admission comparisons appear in manuscript prose and come from `relevance/tables/clustering_exact.json` / `clustering_capacity_cases.csv`. In particular, balanced `B=8` admissions are SCA 100, clustering 70, equal-mass 62 out of 100; IHDP `B=4` admissions are 75, 25, and 7.
 
-Configuration/prerequisite: Table 3. Execute `python -m sca_reproduction run precision` and `python -m sca_reproduction report precision`, then:
+### Figure 5 — Empirical minimum-count operating curves
+
+Label: `fig:precision-operating-curves`. Generate with:
 
 ```sh
 python -m sca_reproduction plot precision --workspace outputs/paper
 ```
 
-Output: `paper_figures/precision_operating_curves.{pdf,png}`. Compression: `precision/tables/assignment_summary.csv`, all laws and caps, `compression_pp_mean` and its normal95 bounds. Widths: `method_width_target_summary.csv`; balanced/aligned, weak/aligned and IHDP/high_heterogeneity; `z_global` at `m_ratio=16,256`, `raw_stratified` and `raw_pooled` at 256; use `width_mean` and `width_ci95_lower/upper`. Each point uses **all 100 blocks**, with no admission filtering. Include all five caps and the width target .20. Caps/profiles/cohorts/methods repeat those blocks. `paired_cap_contrasts.csv` records paired changes with `left_cap=2`, `right_cap=3/2`, `metric=z_global_width`; interpret the saved left-minus-right direction.
+Output: `paper_figures/precision_operating_curves.{pdf,png}`. Compression uses all laws and five caps from `precision/tables/assignment_summary.csv`. Width panels use the manuscript’s selected law/profile/method/cohort combinations from `method_width_target_summary.csv`. Every point uses all 100 blocks without admission filtering; repeated caps, profiles, prefixes, and methods do not enlarge the independent denominator.
 
-### Figure 5 — SCA computation from sufficient counts (`fig:computational-cost`)
+## Text and theorem results
 
-Configuration: `configs/jmlr_computation_v1.json`; inputs are generated from source, including the K64 release-count bridge. Execute `python -m sca_reproduction run computation` and `python -m sca_reproduction report computation`, then:
+### Finite-sample certification bottleneck
 
-```sh
-python -m sca_reproduction plot computation --workspace outputs/paper
-```
+Stable labels: `sec:calibration-rate`, `thm:sparse-mixture-lower-bound`, `eq:sparse-mixture-lower-bound`, and `sec:statistical-efficiency`.
 
-Output: `paper_figures/computational_cost.{pdf,png}`. Inputs: `computation/tables/primary_overview.csv` (both laws, K=16/32/64/128/256, 20 cases each) and `capacity_overview.csv` (K=64/128/256, five matched cases each). Plot `total_seconds_median` with `total_seconds_q25/q75`; these are **IQRs, not confidence intervals**. Primary totals run from loaded sufficient counts through aggregate inference; capacity totals cover the provider across its five reporting limits, without outcomes. Exclude startup/shutdown, serialization, subsequent raw-reference and repeated-cohort work. Whole-process lifetime memory includes those later tasks; it is not isolated analyst memory. Inspect `cases.csv`, `stage_summary.csv`, `timing_accounting.csv` and `status_denominators.csv` for actual completion, censored cases and additive accounting. Additional cohorts and capacity runs reuse inputs and do not add independent calibration datasets. Published seconds/bytes are hardware-dependent measurements, not equality targets for another machine.
+Run/report `certification` after assignment. Exact outputs are:
 
-## Interpreting the outputs
+- `certification/tables/oracle_margin_exact.json` — experimental positive-margin same-realized-family oracle rows;
+- `certification/tables/lower_bound_exact.json` — two-point and sparse-mixture same-alternative calculations;
+- `certification/theory.json` — distinctly labeled necessary, empirical-grid, and analytical-sufficient quantities.
 
-- **Compression:** Table 1 uses the full assignment panel; Table 2 uses the held-out evaluation replications; Figure 4 uses the independent release panel. Do not interchange these denominators. Read SCA as combined-family Coupled CP (`coupled`, `original`, or F in the corresponding records). The search-gain headline pairs `100*(count_fixed-count_combined)/K` within each assignment dataset at unknown masses and cap `3/2`; use the fixed-grid paired variance, rather than subtracting the two compression intervals.
-- **Admission:** Figure 3's balanced B=8 and IHDP B=4 comparisons use `verified_capacity` versus `equal_calibration_mass`. The separate certificate-construction comparison (75 versus 67/67 on IHDP) is in `efficiency/tables/release_condition_summary.csv`, not the equal-mass baseline comparison (75 versus 7).
-- **Recovery:** Figure 1's recovery counts/rates use 300 paths per condition; repeated sizes and mass modes do not enlarge that denominator. The heterogeneous-law `unsafe_certification_*` fields report unsafe certifications.
-- **Decomposition and precision:** Table 3 and `decomposition_summary.csv` report signed stages. `method_width_target_summary.csv` reports attainment of the .20 width target for every method; `admitted_target_*` and `admitted_and_miss_*` use the unconditional 100-block denominator. Admission-conditioned widths are descriptive. Assignment validity is simultaneous over candidate selections, but outcome guarantees remain pointwise for the prespecified analysis.
+At `b=4/13`, the two-point and sparse-mixture necessary ceilings are 1,900 and 2,705. At `b=199/500`, they are 7,156 and 9,606. The first prespecified recovery-grid size with complete recovery is 256,000. The retained Bonferroni CP-diameter sufficient crossing is 2,852,384. These answer different questions and must not be presented as one threshold.
 
-For validation scope, see [Reproduction](REPRODUCTION.md#validation).
+Šidák, one-sided, and pilot-pooled investigations remain excluded from the default public paper workflow.
+
+### Empirical relevance and RHC
+
+Stable labels: `sec:statistical-baseline`, `tab:statistical-baseline`, `fig:split-search-contrasts`, and `sec:release-capacity`.
+
+The RHC primary split uses 4,014 calibration and 1,721 outcome records. At capacity four, SCA, clustering, and equal-mass certificates are `1.85`, `2.02`, and `2.60`; all exceed `1.5`. The operational result is abstention and no aggregate interval. Twenty further splits are dependent stability analyses over the same 5,735 records.
+
+### Released finite-outcome inference
+
+Stable labels: `sec:finite-outcome-inference`, `eq:outcome-error-allocation`, `thm:finite-outcome-inference`, `cor:outcome-mass-drift`, and `eq:drifted-mass-box`.
+
+The executable counterparts are `SCAResult.infer_outcomes`, `SCAResult.release_outcomes`, `analyze_outcome_release`, and `confidence_allocation`, with examples `example-bounded` and `example-drift`. Focused tests verify binary backward compatibility, bounded affine rescaling, normalized-scale intersection, recorded precision reconstruction, supplied mass drift, capacity enforcement, and corrected sensitivity-ceiling enforcement.
+
+## Retained non-main outputs
+
+`python -m sca_reproduction plot computation` still generates `computational_cost.{pdf,png}` from the retained scaling report. The current manuscript reports computational timings in text and appendices and does **not** contain a main computational-cost figure. Accordingly this diagnostic is not assigned a current figure number.
+
+The optional exact five-state cap-`19/10` fixture is also separate from the current paper results. It is available through `python -m experiments.jmlr_five_state_counterexample_v1` and exhaustively verifies the unrestricted and contiguous optima.
+
+For data provenance, denominators, restart behavior, and validation scope, see [DATA.md](DATA.md) and [REPRODUCTION.md](REPRODUCTION.md).
