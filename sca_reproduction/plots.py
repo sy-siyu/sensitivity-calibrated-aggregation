@@ -1,4 +1,4 @@
-"""The five main paper layouts, drawn only from public reporting tables.
+"""Four current empirical figures plus a retained computation diagnostic.
 
 Install the optional plotting dependencies before calling :func:`plot`.  No
 simulation, confidence-bound calculation, or uncertainty calculation occurs in
@@ -144,19 +144,20 @@ def _load_efficiency(root, partial):
 
 
 def _load_split(root, partial):
-    _summary(root, partial, (('conditions', 48), ('replications_per_condition', 90)))
-    rows = [r for r in _rows(root/'tables/paired_grid.csv')
-            if r.get('scope') == 'all' and _cap(r) == Fraction(3,2)
-            and r.get('contrast') in dict(CONTRASTS)]
+    summary = _summary(root, partial)
+    _require(summary.get('selected_fraction') == '1/3',
+             'Split figure requires selected fraction 1/3')
+    if not partial:
+        _require(summary.get('counts', {}).get('ltt_evaluation') == 4320,
+                 'Split figure requires 4,320 evaluation datasets')
+    rows = [r for r in _rows(root/'tables/ltt_contrasts.csv')
+            if _cap(r) == Fraction(3,2) and r.get('contrast') in dict(CONTRASTS)]
     indexed = _unique(rows, lambda r:r['contrast'], dict(CONTRASTS), 'split contrast')
     for row in indexed.values():
-        for key, expected in (('difference_pp_conditions',48),
-                              ('difference_pp_expected_conditions',48),
-                              ('difference_pp_paired_datasets',4320)):
+        _require(row.get('selected_fraction') == '1/3',
+                 'Split contrast requires selected fraction 1/3')
+        for key, expected in (('conditions',48), ('datasets',4320)):
             _denominator(row, key, expected, partial)
-        if not partial:
-            _require(row.get('difference_pp_all_conditions_present') == 'True',
-                     'Split contrast lacks one or more fixed conditions')
         _interval(row, 'difference_pp', '_analytic_Normal95_lower', '_analytic_Normal95_upper')
     return indexed
 
@@ -447,7 +448,7 @@ _DRAWERS = dict(zip(STUDIES, (_draw_efficiency,_draw_split,_draw_release,
 
 
 def plot(study, workspace, output_dir=None, *, allow_partial=False):
-    """Draw current main-paper figures from completed public reporter outputs.
+    """Draw current empirical figures or the retained computation diagnostic.
 
     ``workspace`` is the common public reproduction workspace, containing the
     study subdirectories (not a historical research directory).  All selected
@@ -461,7 +462,9 @@ def plot(study, workspace, output_dir=None, *, allow_partial=False):
     _require(study in (*STUDIES,'all'), f'Unknown paper figure study {study!r}')
     workspace = Path(workspace).resolve()
     studies = STUDIES if study == 'all' else (study,)
-    loaded = {name:_LOADERS[name](workspace/name,allow_partial) for name in studies}
+    def study_root(name):
+        return workspace/('relevance' if name == 'split' else name)
+    loaded = {name:_LOADERS[name](study_root(name),allow_partial) for name in studies}
     try:
         # Respect an explicit caller setting.  Otherwise keep font/config caches
         # in the operating system's temporary area, including sandboxed runs.
@@ -474,7 +477,7 @@ def plot(study, workspace, output_dir=None, *, allow_partial=False):
     destination = Path(output_dir).resolve() if output_dir is not None else workspace/'paper_figures'
     destination.mkdir(parents=True,exist_ok=True)
     result = {'study':study,'partial_fixture':bool(allow_partial),'figures':{},
-        'scope':'Current main-paper layouts from public reporting tables; saved uncertainty unchanged'}
+        'scope':'Current empirical layouts and retained computation diagnostic from public reporting tables; saved uncertainty unchanged'}
     style = {'font.size':9.3,'axes.labelsize':9.3,'axes.titlesize':10,'legend.fontsize':9.3,
         'xtick.labelsize':9.3,'ytick.labelsize':9.3,'pdf.fonttype':42,'svg.fonttype':'none'}
     with plt.rc_context(style):

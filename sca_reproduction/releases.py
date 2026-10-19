@@ -1,10 +1,7 @@
-"""Fresh SCA release, outcome, precision and computation study orchestration.
+"""SCA release, outcome, precision and computation study orchestration.
 
-Only generators, source code, configuration and an explicitly supplied public
-IHDP covariate file are inputs. No historical observation, confidence region,
-frozen protocol or result archive is required. Generated evidence stays under
-the caller's output directory. The numerical implementations keep their
-original internal module names to make their provenance explicit.
+Inputs are generated from the study configurations and the supplied public
+IHDP covariate file. Results are written under the caller's output directory.
 """
 from __future__ import annotations
 

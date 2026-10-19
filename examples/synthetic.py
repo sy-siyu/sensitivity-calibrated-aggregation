@@ -1,7 +1,7 @@
 """A short full-sample sensitivity-calibrated aggregation (SCA) workflow."""
 import json
 import numpy as np
-from sca import SCA, analyze_release
+from sca import SCA, analyze_outcome_release
 
 
 def main():
@@ -18,8 +18,8 @@ def main():
     out_N = outcomes.multinomial(256*K, p)
     out_T = outcomes.binomial(out_N, e)
     successes = outcomes.binomial(out_T, .5)
-    artifact = fitted.release(out_N, out_T, successes)
-    analyst = analyze_release(artifact)
+    artifact = fitted.release_outcomes(out_T, successes, branch="binary")
+    analyst = analyze_outcome_release(artifact)
     print(json.dumps({'procedure':'sensitivity-calibrated aggregation (SCA)',
         'objective':fitted.objective,'groups':fitted.groups,
         'distortion_certificate':round(float(fitted.certificate), 6),

@@ -33,7 +33,7 @@ def fixture(workspace, full=False):
     summaries = {
         'efficiency':{'independent_input_units':{'historical':4800,'release':300,'recovery':300},
                       'conditions':{'historical':432,'release':45,'recovery':144}},
-        'split':{'conditions':48,'replications_per_condition':90},
+        'relevance':{'selected_fraction':'1/3','counts':{'ltt_evaluation':4320}},
         'release':{'calibration_conditions':30,'replications_per_condition':100},
         'precision':{'expected_independent_blocks_per_law':100,'independent_blocks':300,
                      'assignment_conditions':15,'method_conditions':320},
@@ -63,14 +63,12 @@ def fixture(workspace, full=False):
     write_rows(workspace/'efficiency/tables/recovery_condition_summary.csv',rows)
     rows = []
     for contrast,label in plots.CONTRASTS:
-        rows.append(dict(scope='all',cap='3/2',contrast=contrast,
-            difference_pp_conditions=48 if full else 1,
-            difference_pp_expected_conditions=48 if full else 1,
-            difference_pp_paired_datasets=4320 if full else count,
-            difference_pp_all_conditions_present=full,difference_pp_mean=3.1,
+        rows.append(dict(cap='3/2',contrast=contrast,selected_fraction='1/3',
+            conditions=48 if full else 1,datasets=4320 if full else count,
+            difference_pp_mean=3.1,
             difference_pp_analytic_Normal95_lower=-1.234,
             difference_pp_analytic_Normal95_upper=8.4))
-    write_rows(workspace/'split/tables/paired_grid.csv',rows)
+    write_rows(workspace/'relevance/tables/ltt_contrasts.csv',rows)
     rows = []
     for law,K in enumerate((64,64,16)):
         for method in ('verified_capacity','equal_calibration_mass'):
@@ -107,7 +105,7 @@ class PaperInputChecks(unittest.TestCase):
     def test_full_synthetic_grid_validates_and_values_keep_their_scope(self):
         with tempfile.TemporaryDirectory(prefix='sca-paper-fixture-') as directory:
             workspace = Path(directory); fixture(workspace,full=True)
-            data = {name:loader(workspace/name,False) for name,loader in plots._LOADERS.items()}
+            data = {name:loader(workspace/('relevance' if name=='split' else name),False) for name,loader in plots._LOADERS.items()}
             self.assertEqual(len(data['efficiency'][0]),4800)
             self.assertEqual(float(data['efficiency'][0][0]['minimax_log_inflation']),.4)
             self.assertEqual(len(data['release']),30)
@@ -144,6 +142,19 @@ class PaperInputChecks(unittest.TestCase):
             plots._number({'x':'NA'},'x')
         with self.assertRaisesRegex(ValueError,'Unknown paper'):
             plots.plot('generic','/unused')
+
+    def test_split_figure_requires_current_relevance_and_rejects_old_fraction(self):
+        with tempfile.TemporaryDirectory(prefix='sca-current-figure-') as directory:
+            workspace=Path(directory); fixture(workspace,full=True)
+            (workspace/'relevance').rename(workspace/'split')
+            with self.assertRaises((ValueError,FileNotFoundError)):
+                plots.plot('split',workspace)
+            self.assertFalse((workspace/'paper_figures').exists())
+            (workspace/'split').rename(workspace/'relevance')
+            path=workspace/'relevance/tables/ltt_contrasts.csv'
+            rows=plots._rows(path); rows[0]['selected_fraction']='1/5'; write_rows(path,rows)
+            with self.assertRaisesRegex(ValueError,'fraction 1/3'):
+                plots.plot('split',workspace)
 
     def test_runtime_module_has_no_private_source_or_solver_dependency(self):
         source = inspect.getsource(plots)

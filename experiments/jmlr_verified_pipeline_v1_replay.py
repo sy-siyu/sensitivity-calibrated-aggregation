@@ -1,8 +1,7 @@
 """Fresh-process rigorous sign replay and exact saved-decision reconstruction.
 
-The historical evidence checker is retained unchanged. This integration adds
-new Arb evaluations of every distinct nonstructural bracket, and repeats exact
-cell optimization/selection from the saved observations without sampling.
+Evaluates every distinct nonstructural bracket with Arb and repeats exact cell
+optimization/selection from the saved observations without sampling.
 """
 from __future__ import annotations
 from fractions import Fraction as Q

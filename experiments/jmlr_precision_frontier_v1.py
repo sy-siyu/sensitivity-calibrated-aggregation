@@ -1,8 +1,7 @@
 """Resumable saved-block cap operating curves; this module draws no observations.
 
-All historical data and implementations remain read-only. Selection receives
-calibration-only arguments. Population laws are passed only after that call,
-into the explicitly privileged diagnostic path. One launch owner writes blocks.
+Selection receives calibration-only arguments. Population laws enter only the
+subsequent diagnostic calculation. One process owns writes to each workspace.
 """
 from __future__ import annotations
 import os

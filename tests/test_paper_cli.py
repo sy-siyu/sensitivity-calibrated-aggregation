@@ -9,6 +9,14 @@ from sca_reproduction import __main__ as cli
 
 
 class PaperCommands(unittest.TestCase):
+    def test_obsolete_split_runner_is_not_a_public_command(self):
+        for command in ('run','report'):
+            with patch.object(sys,'argv',['sca-reproduce',command,'split']), \
+                 patch.object(cli,'_run',side_effect=AssertionError('Must not run experiments')), \
+                 contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                cli.main()
+            self.assertEqual(error.exception.code,2)
+
     def test_plot_reads_reported_workspace_without_experiment_dispatch(self):
         with patch.object(sys,'argv',['sca-reproduce','plot','release','--workspace','outputs/example']), \
              patch('sca_reproduction.plots.plot',return_value={'status':'complete'}) as plot, \

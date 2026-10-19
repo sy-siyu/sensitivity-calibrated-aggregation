@@ -92,6 +92,5 @@
   "new_observations": 0,
   "new_streams": false,
   "outcome_based_selection": false,
-  "historical_overwrites": false,
   "interpretation": "retrospective matched empirical operating curves; no globally optimal compression-width frontier or adaptive outcome-based cap choice"
 }

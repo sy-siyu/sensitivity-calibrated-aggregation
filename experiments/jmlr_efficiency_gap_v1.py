@@ -1,7 +1,7 @@
-"""Single launch owner for the concern-3 assignment-only study.
+"""Assignment-only certification diagnostics and nested-count recovery.
 
-Historical observations and completed outcome studies are read-only. Fresh
-draws occur only in the separately seeded nested-count recovery experiment.
+Uses saved assignment observations; fresh draws occur only in the separately
+seeded nested-count recovery experiment.
 """
 from __future__ import annotations
 import os

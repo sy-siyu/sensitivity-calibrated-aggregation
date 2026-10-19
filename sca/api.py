@@ -13,8 +13,29 @@ from experiments.jmlr_verified_adaptive_v1_roots import RootPolicy, RootVerifier
 from experiments.jmlr_verified_pipeline_v1_arithmetic import cell_certificate
 from experiments.jmlr_verified_pipeline_v1_core import counts, exact_order, select_families
 from experiments.jmlr_release_capacity_v1_search import candidate_cells, capacity_search
-from experiments.jmlr_release_capacity_v1_interface import export_release, analyze_release
 from experiments.jmlr_split_ablation_v1_core import _cell_lower, _relevant_unknown, _safe_selection
+from experiments.jmlr_inference_extensions_v1 import (
+    analyze_release as _analyze_outcome_release,
+    export_release as export_outcome_release,
+    infer_shared,
+)
+
+
+def analyze_outcome_release(artifact, verifier=None, *, decimal_precision=None):
+    """Reconstruct a public aggregate release and recheck its capacity envelope."""
+    if isinstance(artifact, dict) and set(artifact) == {'reporting_capacity', 'release'}:
+        capacity = artifact['reporting_capacity']
+        if (isinstance(capacity, bool) or not isinstance(capacity, numbers.Integral)
+                or capacity < 1):
+            raise ValueError('release reporting capacity must be a positive integer')
+        payload = artifact['release']
+        if not isinstance(payload, dict) or len(payload.get('groups', ())) > capacity:
+            raise ValueError('released groups exceed the reporting capacity')
+        result = _analyze_outcome_release(
+            payload, verifier=verifier, decimal_precision=decimal_precision)
+        return dict(result, reporting_capacity=int(capacity), admission_verified=True)
+    return _analyze_outcome_release(
+        artifact, verifier=verifier, decimal_precision=decimal_precision)
 
 
 @dataclass
@@ -48,22 +69,82 @@ class SCAResult:
                     and self.partition is not None and len(self.partition) <= B
                     and self.certificate is not None and G*self.certificate <= ceiling)
 
-    def release(self, N, T, successes, *, raw_budget='2'):
-        """Export anonymous aggregate counts/bounds for an independent cohort.
+    def _calibration(self):
+        """Internal bridge to the public outcome interface.
 
-        Coverage assumes independent calibration and outcome samples with the
-        same population assignment law P(S, A): both state masses and treatment
-        propensities. Observed counts need not match. Sharing only P(A | S) is
-        insufficient: changed state masses can change aggregate propensities.
-
-        The standard outcome interface requires calibration error1/40 and
-        reserves1/80 each for raw/aggregate outcome families. Every selected
-        group is retained, including groups with no treated observations.
+        Callers intentionally receive methods accepting ordinary count/sum
+        vectors; they never need to construct the research calibration mapping.
         """
-        if self.status != 'finite' or self.partition is None:
-            raise ValueError('A completed finite selected certificate is required for export')
-        return export_release(self._region, self.partition, self._records,
-                              N, T, successes, G=rational(raw_budget))
+        if (not self.optimization_completed or self.status != 'finite'
+                or self.partition is None or self.certificate is None):
+            raise ValueError('A completed finite selected certificate is required')
+        selected = tuple(self._records[cell] for cell in self.partition)
+        if any(record.get('status') != 'full' for record in selected):
+            raise ValueError('Every selected cell requires a completed certificate')
+        return {'region': self._region, 'partition': self.partition,
+                'selected_cells': selected, 'certificate': self.certificate}
+
+    def _reporting_capacity(self, reporting_capacity):
+        capacity = self.metadata.get('capacity') if reporting_capacity is None else reporting_capacity
+        if capacity is None:
+            capacity = len(self.partition or ())
+        K = self._region['K']
+        if (isinstance(capacity, bool) or not isinstance(capacity, numbers.Integral)
+                or not 1 <= capacity <= K):
+            raise ValueError('reporting_capacity must be an integer between1 andK')
+        if self.partition is None or len(self.partition) > capacity:
+            raise ValueError('selected partition exceeds the reporting capacity')
+        return int(capacity)
+
+    def infer_outcomes(self, outcome_treated, treated_outcome_sums, *,
+                       branch='binary', outcome_bounds=('0', '1'),
+                       overall_alpha='1/20', alpha_cal=None, alpha_raw=None,
+                       alpha_aggregate=None, raw_budget='2', mass_drift='0',
+                       sensitivity_ceiling='3', decimal_precision=80,
+                       lp_time_limit=None):
+        """Run provider-side binary or bounded-outcome inference.
+
+        ``SCA(alpha=...)`` remains the assignment-calibration error.  The
+        separate ``overall_alpha`` and its three optional components govern
+        the shared outcome-inference event.  With no component override, the
+        allocation is overall/2, overall/4, overall/4.
+        """
+        calibration = self._calibration()
+        return infer_shared(
+            calibration, outcome_treated, treated_outcome_sums,
+            alpha=rational(overall_alpha),
+            alpha_cal=None if alpha_cal is None else rational(alpha_cal),
+            alpha_s=None if alpha_raw is None else rational(alpha_raw),
+            alpha_z=None if alpha_aggregate is None else rational(alpha_aggregate),
+            outcome_bounds=tuple(map(rational, outcome_bounds)), branch=branch,
+            raw_budget=rational(raw_budget), zeta=rational(mass_drift),
+            sensitivity_ceiling=rational(sensitivity_ceiling),
+            decimal_precision=decimal_precision, lp_time_limit=lp_time_limit)
+
+    def release_outcomes(self, outcome_treated, treated_outcome_sums, *,
+                         branch='binary', outcome_bounds=('0', '1'),
+                         overall_alpha='1/20', alpha_cal=None, alpha_raw=None,
+                         alpha_aggregate=None, raw_budget='2', mass_drift='0',
+                         sensitivity_ceiling='3', reporting_capacity=None,
+                         decimal_precision=80):
+        """Export an admitted aggregate-only binary or bounded release.
+
+        Capacity and the drift-corrected transported sensitivity ceiling are
+        checked before the artifact is returned.  Bounded releases record the
+        decimal outward-rounding precision used by analyst reconstruction.
+        """
+        capacity = self._reporting_capacity(reporting_capacity)
+        artifact = export_outcome_release(
+            self._calibration(), outcome_treated, treated_outcome_sums,
+            alpha=rational(overall_alpha),
+            alpha_cal=None if alpha_cal is None else rational(alpha_cal),
+            alpha_s=None if alpha_raw is None else rational(alpha_raw),
+            alpha_z=None if alpha_aggregate is None else rational(alpha_aggregate),
+            outcome_bounds=tuple(map(rational, outcome_bounds)), branch=branch,
+            raw_budget=rational(raw_budget), zeta=rational(mass_drift),
+            sensitivity_ceiling=rational(sensitivity_ceiling),
+            decimal_precision=decimal_precision, reporting_capacity=capacity)
+        return artifact
 
 
 class SCA:
