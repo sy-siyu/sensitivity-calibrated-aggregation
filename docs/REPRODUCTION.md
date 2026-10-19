@@ -95,7 +95,7 @@ Aggregate releases deliberately omit raw states, memberships, and the calibratio
 
 JSON artifacts encode rational values exactly. The certification and relevance reporters additionally write explicitly named `*_exact.json` files. CSV files are rounded or floating display summaries and are never used as replacements for exact evidence. Plotters read completed reporter tables and save a coordinate receipt next to every figure.
 
-`paper-tables` requires all three complete current empirical table inputs. Current table/figure numbers and stable labels are mapped in [PAPER_RESULTS.md](PAPER_RESULTS.md).
+`paper-tables` assembles manuscript Tables 3–4 and additional width diagnostics from complete assignment, efficiency, relevance, and precision reports. Current table/figure numbers and stable labels are mapped in [PAPER_RESULTS.md](PAPER_RESULTS.md).
 
 ## Randomness and numerical conventions
 

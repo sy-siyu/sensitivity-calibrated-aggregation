@@ -182,7 +182,7 @@ def main():
     plots.add_argument('study',choices=('efficiency','split','release','precision','computation','all'))
     plots.add_argument('--workspace',default='outputs/paper')
     plots.add_argument('--output-dir',default=None)
-    tables=commands.add_parser('paper-tables',help='Assemble the current main-paper tables from complete reported outputs')
+    tables=commands.add_parser('paper-tables',help='Assemble paper tables and additional width diagnostics from complete reports')
     tables.add_argument('--workspace',default='outputs/paper')
     tables.add_argument('--output-dir',default=None)
     for name in ('run','report','smoke'):

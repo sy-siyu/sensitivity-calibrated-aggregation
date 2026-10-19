@@ -320,11 +320,11 @@ def _csv(path, rows):
 
 
 def generate(workspace, output_dir=None):
-    """Write main-table CSVs only after all required complete panels validate.
+    """Write paper tables and additional diagnostics after complete panels validate.
 
-    Repeated methods/caps do not add datasets. Current manuscript Table5
-    includes all100 blocks in each profile, regardless of admission. Stage
-    increments remain signed.
+    Repeated methods/caps do not add datasets. The additional width diagnostics
+    include all100 blocks in each profile, regardless of admission. Stage
+    increments remain signed; they have no table number in the paper.
     """
     workspace = Path(workspace).resolve()
     paths = {
@@ -359,6 +359,6 @@ def generate(workspace, output_dir=None):
         'precision_scope': {'law_index': 0, 'law_id': 'K64_balanced_moderate_ordered', 'profiles': list(PROFILES),
             'm_ratio': 256, 'method': 'z_global', 'blocks_per_profile': 100, 'admission_filter': False,
             'I3': 'privileged true assignment and operational outcome CP bounds at actual certified transported budget'},
-        'scope': 'Numerical extraction of paper tables from complete reporter outputs, using their existing uncertainty estimates'}
+        'scope': 'Paper Tables 3–4 and additional width diagnostics from complete reporter outputs, using their existing uncertainty estimates'}
     (destination/'manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True)+'\n', encoding='utf-8')
     return manifest
