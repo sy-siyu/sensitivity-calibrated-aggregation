@@ -17,7 +17,7 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
-The numerical dependencies are pinned: NumPy, SciPy and python-flint (FLINT/Arb interval arithmetic). Plotting code and plotting dependencies are omitted.
+The numerical dependencies are pinned: NumPy, SciPy and python-flint (FLINT/Arb interval arithmetic). Main-paper plotting is optional: install it with `python -m pip install -e '.[plots]'`; the numerical pins remain unchanged.
 
 ## Use SCA
 
@@ -95,7 +95,17 @@ python -m sca_reproduction run all --workspace outputs/paper
 python -m sca_reproduction report all --workspace outputs/paper
 ```
 
-For a single study, use `report STUDY` with the same workspace. Full reporters check complete panel sizes; explicitly bounded runs use partial diagnostics. Outputs include generated input/protocol files, per-dataset records, `tables/*.csv`, and JSON summaries. No generated outputs belong in Git. There are no plotting commands.
+For a single study, use `report STUDY` with the same workspace. Full reporters check complete panel sizes; explicitly bounded runs use partial diagnostics. Outputs include generated input/protocol files, per-dataset records, `tables/*.csv`, and JSON summaries. No generated outputs belong in Git.
+
+The [paper-to-code map](docs/PAPER_RESULTS.md) identifies the current three main tables and five main figures by number and stable LaTeX label. After the required complete reports exist, generate them with:
+
+```sh
+python -m pip install -e '.[plots]'
+python -m sca_reproduction paper-tables --workspace outputs/paper
+python -m sca_reproduction plot all --workspace outputs/paper
+```
+
+The commands read the public runners' reported outputs and write ignored `paper_tables/` and `paper_figures/` directories inside the workspace. Plot one study with `plot efficiency`, `plot split`, `plot release`, `plot precision`, or `plot computation`. They do not launch experiments; incomplete panels are not treated as paper results. See the map for the tagged paper version and the scope of historical-agreement checks versus fresh regeneration.
 
 See [reproduction details](docs/REPRODUCTION.md) for seed schedules, full panel sizes, restart behavior, numerical policies, cost limits and exact-regeneration scope. Full studies can take many CPU-hours and produce substantial exact-number evidence; they were **not rerun for this code release**. A smoke check establishes execution, not the paper's statistical conclusions.
 

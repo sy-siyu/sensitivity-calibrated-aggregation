@@ -8,6 +8,7 @@ Installed dependencies retain their own notices and terms:
 |---|---|
 | NumPy | [NumPy license](https://github.com/numpy/numpy/blob/main/LICENSE.txt); BSD-3-Clause, with additional licenses for bundled components. |
 | SciPy | [SciPy license](https://github.com/scipy/scipy/blob/main/LICENSE.txt); BSD-3-Clause and bundled-component notices. |
+| Matplotlib (optional plots) | [Matplotlib license](https://matplotlib.org/stable/users/project/license.html); Matplotlib's PSF-based license and bundled-component notices. |
 | python-flint | [python-flint license](https://github.com/flintlib/python-flint/blob/master/LICENSE); MIT. Its linked FLINT/Arb libraries retain their own terms. |
 | FLINT | [FLINT source/license](https://github.com/flintlib/flint); see the installed distribution and upstream licenses for FLINT and linked arithmetic libraries. |
 

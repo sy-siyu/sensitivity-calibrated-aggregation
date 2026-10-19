@@ -12,6 +12,9 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 
+[project.optional-dependencies]
+plots = ["matplotlib==3.10.8"]
+
 [project.scripts]
 sca-reproduce = "sca_reproduction.__main__:main"
 

@@ -1,4 +1,4 @@
-"""SCA examples and source-first experiment reproduction (numerical tables only)."""
+"""SCA examples, source-first experiments, tables and optional paper plots."""
 from __future__ import annotations
 
 import argparse
@@ -154,7 +154,7 @@ def smoke(workspace,config,data):
         results[study]=_run(study,workspace,config,data,limit)
         results[study+'_tables']=_report(study,workspace,config)
     receipt={'status':'smoke_complete','scientific_scope':'Execution checks only; full paper studies were not run',
-             'studies':results,'plotting':'not included'}
+             'studies':results,'plotting':'not run; optional paper plots require complete reported panels'}
     releases.dump(Path(workspace)/'smoke_receipt.json',receipt)
     return receipt
 
@@ -165,6 +165,13 @@ def main():
     commands.add_parser('example',help='Run the principal full-sample SCA example')
     data=commands.add_parser('prepare-data',help='Download/check public IHDP covariates (untracked)')
     data.add_argument('--directory',default='data')
+    plots=commands.add_parser('plot',help='Render the current main-paper figures from complete reported outputs')
+    plots.add_argument('study',choices=('efficiency','split','release','precision','computation','all'))
+    plots.add_argument('--workspace',default='outputs/paper')
+    plots.add_argument('--output-dir',default=None)
+    tables=commands.add_parser('paper-tables',help='Assemble the current main-paper tables from complete reported outputs')
+    tables.add_argument('--workspace',default='outputs/paper')
+    tables.add_argument('--output-dir',default=None)
     for name in ('run','report','smoke'):
         command=commands.add_parser(name)
         if name!='smoke':command.add_argument('study',choices=(*STUDIES,'all'))
@@ -178,6 +185,12 @@ def main():
     if args.command=='prepare-data':
         from .data import prepare_data
         result=prepare_data(args.directory)
+    elif args.command=='plot':
+        from .plots import plot
+        result=plot(args.study,args.workspace,output_dir=args.output_dir)
+    elif args.command=='paper-tables':
+        from .paper_tables import generate
+        result=generate(args.workspace,output_dir=args.output_dir)
     else:
         config=_configuration(args.config)
         if args.command=='smoke':result=smoke(args.workspace,config,args.data)
