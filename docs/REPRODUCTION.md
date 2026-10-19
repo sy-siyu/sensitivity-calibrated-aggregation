@@ -1,18 +1,18 @@
 # Reproduction
 
-Run commands from an installed public checkout with `python -m sca_reproduction` (or `sca-reproduce`). The workflow generates its inputs and results inside the selected workspace. It does not read a manuscript tree, a private research checkout, or a saved-result archive.
+Run commands from an installed checkout with `python -m sca_reproduction` (or `sca-reproduce`). The workflow generates inputs and results inside the selected workspace using the tracked configurations and downloaded public data.
 
-`prepare-data` is the only network step. Other runners use local generated artifacts and the two checksum-verified public CSVs. Use a distinct workspace for each configuration; a receipt prevents a smoke workspace from being reinterpreted as a full-paper run.
+`prepare-data` is the only network step. Other runners use local generated artifacts and the two checksum-verified public CSVs. Each workspace records its exact configuration files, including descriptive metadata. Continue an existing run with those files unchanged; use a new workspace after configuration updates. This also prevents a smoke workspace from being reinterpreted as a full-paper run.
 
 ## Current dependency sequence
 
 All individual commands below default to `--workspace outputs/paper --config configs/paper.json`.
 
-1. `run assignment` generates 4,800 datasets over 48 fixed conditions and 100 replications. It computes the principal full-sample SCA procedure, family restrictions, confidence-construction controls, population-oracle diagnostics, and the preserved historical `1/5` and `1/2` pilot splits.
+1. `run assignment` generates 4,800 datasets over 48 fixed conditions and 100 replications. It computes the principal full-sample SCA procedure, family restrictions, confidence-construction controls, population-oracle diagnostics, and the `1/5` and `1/2` pilot splits used by later studies.
 2. `run release` generates 100 independent blocks for each of two K64 controlled laws and the K16 IHDP-derived reference population: **300 independent calibration/outcome blocks total**. Each block supplies five capacities, so later capacity comparisons contain 1,500 dependent capacity cases, not 1,500 independent datasets.
-3. `run certification` consumes the fresh assignment artifacts. Its default output contains only the retained positive-margin same-realized-family oracles and sparse-mixture lower-bound calculation. It does not dispatch the excluded Šidák, one-sided, or pilot-pooled explorations.
-4. `run relevance` consumes assignment and release artifacts plus the verified RHC CSV. It adds three pilot fractions to the two historical fractions, freezes the global development choice `1/3`, reevaluates A–F coherently on 4,320 held-out datasets, certifies the globally optimal one-dimensional propensity-logit clustering proposals on the 300 release blocks, and runs 21 frozen RHC splits.
-5. `run recovery` generates 300 independent nested paths at the 12 retained sample sizes. `run efficiency` combines the fresh assignment, release, and recovery evidence. Run both before `report efficiency`.
+3. `run certification` computes positive-margin oracles in each assignment dataset's realized candidate family and sparse-mixture lower bounds.
+4. `run relevance` consumes assignment and release artifacts plus the verified RHC CSV. It completes the five-fraction LTT development comparison, selects `1/3`, evaluates A–F on 4,320 held-out datasets, certifies globally optimal one-dimensional propensity-logit clustering proposals on the 300 release blocks, and runs 21 RHC splits.
+5. `run recovery` generates 300 independent nested paths at the 12 configured sample sizes. `run efficiency` combines assignment, release, and recovery evidence. Run both before `report efficiency`.
 6. `run precision` reuses release observations and confidence regions at caps `1,11/10,5/4,3/2,2`. Repeated capacities, profiles, methods, and cohort prefixes do not create new independent blocks.
 7. `run outcome` generates the controlled independent binary-outcome panel and raw-data references.
 8. `run computation` performs the fresh sequential scaling study. It uses 200 primary calibration datasets, 30 capacity-provider cases derived from matched inputs, and 20 dependent repeated-cohort cases.
@@ -30,7 +30,7 @@ python -m sca_reproduction run all --workspace outputs/paper
 python -m sca_reproduction report all --workspace outputs/paper
 ```
 
-The current `all` sequence is `assignment`, `release`, `certification`, `relevance`, `recovery`, `efficiency`, `precision`, `outcome`, `computation`. The old `split` runner remains separately selectable for historical audit only. Its immutable configurations are retained as:
+The `all` sequence is `assignment`, `release`, `certification`, `relevance`, `recovery`, `efficiency`, `precision`, `outcome`, `computation`. The separate `split` runner reproduces the earlier two-fraction comparison. Its versioned configurations are:
 
 - `configs/jmlr_statistical_baselines_v1_legacy_20261019.json`
 - `configs/jmlr_split_ablation_v1_legacy_20261019.json`
@@ -41,7 +41,7 @@ They are not used for the current Table 4 or Figure 3.
 
 `configs/jmlr_certification_bottleneck_v1.json` fixes caps `{5/4,3/2,2}` and positive log-margin offsets `{0,1/40,1/20,1/10,1/5}`. For every fresh assignment dataset, the oracle is recomputed in the **same realized union** of the two fixed-tree pruning families and the estimated-order contiguous family used by the operational procedure. Population truth enters only this post-selection diagnostic.
 
-The lower-bound component compares two-point and sparse-mixture alternatives using the identical `b` in each row. Its retained reference rows are:
+The lower-bound component compares two-point and sparse-mixture alternatives using the identical `b` in each row:
 
 | Alternative `b` | Exact distortion | Two-point necessary ceiling | Sparse-mixture necessary ceiling |
 |---|---:|---:|---:|
@@ -50,8 +50,8 @@ The lower-bound component compares two-point and sparse-mixture alternatives usi
 
 These are same-alternative lower-bound ceilings. They are not the same object as either:
 
-- 256,000, the first **prespecified empirical recovery-grid** size with complete recovery in the retained experiment; or
-- 2,852,384, the first integer satisfying the retained analytical Bonferroni CP-diameter sufficient criterion.
+- 256,000, the first **prespecified empirical recovery-grid** size with complete recovery; or
+- 2,852,384, the first integer satisfying the analytical Bonferroni CP-diameter sufficient criterion.
 
 The last quantity is an analytical sufficiency reference, not an executed sample size or an optimal threshold. Full-precision records are written to `certification/tables/oracle_margin_exact.json` and `certification/tables/lower_bound_exact.json`; `oracle_margin_summary.csv` is the rounded display table.
 
@@ -106,7 +106,7 @@ JSON artifacts encode rational values exactly. The certification and relevance r
 
 Assignment generation uses PCG64 `SeedSequence([20261008,300,K,mass_index,overlap_index,geometry_index,size_index,replication])`. The second fixed tree uses `[20261008,101,K]`; the permuted-law geometry uses `[20261008,102,K]`. Exact nominal laws retain the first `K-1` stored binary masses and use the exact final residual.
 
-The five LTT fractions preserve the historical `1/5` and `1/2` splits. New fractions use deterministic multivariate-hypergeometric substreams: `1/10` is nested inside `1/5`, `1/3` lies between `1/5` and `1/2`, and `2/3` extends `1/2`. Pilot scores rank proposals only; verified certification does not use floating pilot bounds.
+The five LTT fractions share nested counts through deterministic multivariate-hypergeometric substreams: `1/10` is nested inside `1/5`, `1/3` lies between `1/5` and `1/2`, and `2/3` extends `1/2`, preserving the two base splits. Pilot scores rank proposals only; verified certification does not use floating pilot bounds.
 
 Release and precision streams use master 2026101502 with a separate development master. Controlled draws use exact 128-bit dyadic thresholds; IHDP resamples reference-record IDs. RHC split `j` uses `PCG64(SeedSequence([20261019,501,j]))`. Recovery uses master 2026101603 and computation uses 2026101701 except for its documented K64 release bridge.
 
@@ -123,16 +123,12 @@ python -m sca_reproduction smoke --workspace outputs/smoke \
   --config configs/smoke.json --data data/ihdp_npci_1.csv --rhc-data data/rhc.csv
 ```
 
-Smoke output is labeled `Execution checks only`; it cannot support manuscript estimates or uncertainty intervals. Full reproduction can require many CPU-hours and tens of GiB. The K256 capacity study can take many minutes and several GiB per process, so do not run two owners of one workspace.
+Smoke output is labeled `Execution checks only`; it cannot support manuscript estimates or uncertainty intervals. Full reproduction can require many CPU-hours and tens of GiB. The K256 capacity study can take many minutes and several GiB per process. Run one study command at a time in each workspace.
 
 ## Optional exact five-state check
 
-`python -m experiments.jmlr_five_state_counterexample_v1` replays a deterministic search bounded at 20,000 rational candidates (first hit after 465), then independently enumerates all 52 unrestricted set partitions and 16 contiguous cut partitions. It verifies masses
+`python -m experiments.jmlr_five_state_counterexample_v1` verifies a rational five-state counterexample by enumerating all 52 unrestricted set partitions and 16 contiguous cut partitions. It uses masses
 
 `(13,610,21,89,377)/1110`, propensities `(545,723,764,836,874)/1000`, and cap `19/10`.
 
-The unrestricted best two-cell distortion is `25244179/13307679 < 19/10`, while the best contiguous two-cell distortion is `12892811/6780186 > 19/10`; a contiguous three-cell partition has distortion `435789/341539 < 19/10`. Thus the unrestricted and contiguous optima are two and three groups, respectively. This is a small exact fixture, not a universal performance result.
-
-## Validation scope
-
-Validation covers the focused unit suites, public API and release compatibility checks, the new exact fixture, and an isolated bounded end-to-end smoke run with both verified datasets. A complete fresh regeneration of the 4,800-dataset, 300-block, recovery, precision, outcome, and computation panels was **not** run merely for this synchronization. The full commands regenerate those panels from public inputs when required.
+The unrestricted best two-cell distortion is `25244179/13307679 < 19/10`, while the best contiguous two-cell distortion is `12892811/6780186 > 19/10`; a contiguous three-cell partition has distortion `435789/341539 < 19/10`. Thus the unrestricted and contiguous optima are two and three groups, respectively.

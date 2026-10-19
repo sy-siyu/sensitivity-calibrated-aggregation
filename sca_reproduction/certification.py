@@ -1,10 +1,4 @@
-"""Portable retained reproduction for the finite-sample certification bottleneck.
-
-The default path contains only the manuscript-retained positive-margin oracle
-and sparse-mixture lower-bound calculations.  Historical exploratory Šidák,
-one-sided, and pilot-pooled code remains auditably available in the core module
-but is not dispatched here.
-"""
+"""Positive-margin oracle and sparse-mixture lower-bound reproduction."""
 from __future__ import annotations
 
 from collections import defaultdict
@@ -35,7 +29,7 @@ def configuration():
     if cfg['version'] != 'jmlr_certification_bottleneck_v1':
         raise ValueError('certification configuration version differs')
     if tuple(map(F, cfg['caps'])) != CAPS or tuple(map(F, cfg['oracle_log_margins'])) != DELTAS:
-        raise ValueError('positive-margin grid differs from the retained study')
+        raise ValueError('positive-margin grid differs from the configured study')
     if cfg['public_default_components'] != ['positive_margin_oracle', 'sparse_mixture_lower_bound']:
         raise ValueError('public certification defaults differ')
     return cfg
@@ -82,7 +76,7 @@ def _theory(cfg):
                  'sparse_mixture_ceiling': row['mixture_ceiling']}
                 for row in fixed],
             'empirical_recovery_grid_first_complete_n': 256_000,
-            'empirical_scope': 'first prespecified recovery-grid size with complete recovery in the retained experiment; not an analytical necessity or sufficiency bound',
+            'empirical_scope': 'first prespecified recovery-grid size with complete recovery; not an analytical necessity or sufficiency bound',
             'bonferroni_sufficient_first_integer': sufficient['first_integer'],
             'sufficient_scope': 'direct analytical CP-diameter criterion; not an executed sample size or optimal threshold',
         },
@@ -137,8 +131,7 @@ def run(workspace, *, limit=None):
                 'status': 'complete' if total == cfg['historical_datasets'] else 'incomplete',
                 'assignment_datasets': total, 'expected_assignment_datasets': cfg['historical_datasets'],
                 'new_or_checked': completed, 'bounded_prefix': limit,
-                'default_components': cfg['public_default_components'],
-                'excluded_explorations': cfg['excluded_from_default']}
+                'default_components': cfg['public_default_components']}
     releases.dump(root/'manifest.json', manifest)
     return manifest
 

@@ -447,7 +447,7 @@ def generate(workspace, output_dir=None):
         'precision_scope': {'law_index': 0, 'law_id': 'K64_balanced_moderate_ordered', 'profiles': list(PROFILES),
             'm_ratio': 256, 'method': 'z_global', 'blocks_per_profile': 100, 'admission_filter': False,
             'I3': 'privileged true assignment and operational outcome CP bounds at actual certified transported budget'},
-        'historical_split_configuration': 'retained under explicitly named legacy configuration files; not used for current manuscript Table4',
-        'scope': 'Numerical extraction of current main tables from complete public reporter outputs; no new inference or manuscript edits'}
+        'historical_split_configuration': 'earlier two-fraction configurations; Table4 uses the five-fraction relevance study',
+        'scope': 'Numerical extraction of paper tables from complete reporter outputs, using their existing uncertainty estimates'}
     (destination/'manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True)+'\n', encoding='utf-8')
     return manifest

@@ -1,7 +1,6 @@
-"""Separate, resumable launch owner for the reporting-capacity experiment.
+"""Resumable reporting-capacity experiment.
 
-Historical studies and manuscript sources are read-only inputs. Run freeze,
-preflight, run, report from the repository root using the existing environment.
+Run freeze, preflight, run and report from the repository root.
 """
 from __future__ import annotations
 import os

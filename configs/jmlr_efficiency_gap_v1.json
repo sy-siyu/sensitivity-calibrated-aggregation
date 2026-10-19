@@ -106,6 +106,6 @@
     "recovery_preflight_paths": 1
   },
   "uncertainty": "individual binary rates two-sided95% Clopper-Pearson; continuous summaries and paired within-independent-block differences use pointwise mean +/-1.96SE; explicit denominators/infinity/unresolved frequencies; equal weight for each of original48conditions",
-  "interpretation": "retrospective historical comparison; pooled certificate is valid upper bound, not exact intersection supremum; no min of two full-alpha procedures; no minimax-unavoidability conclusion without lower bound; no outcome rerun or manuscript edit",
+  "interpretation": "retrospective assignment-only comparison; pooled certification uses a common error allocation and yields a valid upper bound rather than the exact intersection supremum; the empirical gaps do not establish minimax lower bounds",
   "planned_peak_storage_gb": 12
 }

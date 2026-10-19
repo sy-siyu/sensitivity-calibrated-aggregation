@@ -1,6 +1,5 @@
 {
   "version": "jmlr_certification_bottleneck_v1",
-  "client_date": "2026-10-19",
   "output_dir": "certification",
   "assignment_source": "assignment",
   "historical_datasets": 4800,
@@ -13,7 +12,6 @@
   "oracle_scope": "minimum count in the same realized union of two fixed-tree pruning families and the estimated-order contiguous family",
   "oracle_threshold_comparison": "python-flint Arb enclosure refined until every exact rational cell distortion is certified on one side of c exp(-delta); a rational separator preserving that certified feasible set is then passed to the unchanged exact selector",
   "public_default_components": ["positive_margin_oracle", "sparse_mixture_lower_bound"],
-  "excluded_from_default": ["sidak", "one_sided", "pilot_pooled"],
   "sidak": {
     "total_error": "retain each source study's alpha",
     "unknown_mass_split": {"propensity": "alpha/2", "mass": "alpha/2"},
@@ -28,8 +26,7 @@
     "datasets": "replication 10 in every one of the 48 historical conditions",
     "candidate_collection": "conditional on the independent pilot: every distinct nonsingleton cell in the two fixed trees or the pilot-order contiguous family",
     "heldout_allocation": {"raw": "4 alpha/5", "pooled": "alpha/5 divided by the complete conditional cell collection"},
-    "comparators": ["saved full-data original", "saved heldout raw full-alpha", "new heldout raw 4alpha/5 allocation control", "new heldout pilot-pooled common-event certificate"],
-    "decision_rule": "bounded all-condition screen only; do not expand unless the matched pooling increment is practically material and the full-data gap is plausibly recovered"
+    "comparators": ["saved full-data original", "saved heldout raw full-alpha", "new heldout raw 4alpha/5 allocation control", "new heldout pilot-pooled common-event certificate"]
   },
   "lower_bound": {
     "K": 64,
@@ -70,5 +67,5 @@
     "paired": "paired differences over independent blocks; binary differences use mean-SE, not a pooled binomial interval",
     "infinity_unresolved_rejection": "retain as distinct outcomes"
   },
-  "scope": "retrospective assignment-only investigation over fresh public assignment artifacts; population truth is used only for oracle calculations and diagnostics; no manuscript or historical result is modified"
+  "scope": "retrospective assignment-only analysis; population truth is used only for oracle calculations and diagnostics"
 }

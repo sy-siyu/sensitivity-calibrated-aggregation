@@ -643,7 +643,7 @@ def report(root,development=False):
                 'recovery':'First90% grid crossing is descriptive and not exact sample complexity. Pointwise confidence is not simultaneous over nested sample sizes. Provider is not told homogeneous e.',
                 'alternative':'Pooled alternative is min(Uraw,V) on its raw+pooled common event; it is not the exact supremum over the joint intersection. Control spends the same raw allocation as the alternative.',
                 'timing':'Three-procedure computation shares regions, certificates and caches within a worker. Block costs are measured; procedure-specific speed differences cannot be inferred. Worker lifetime RSS/cache counters reflect prior tasks.',
-                'scope':'Assignment-only reanalysis; no outcome experiments rerun, and no manuscript or historical output edits.',
+                'scope':'Assignment-only analysis of certificate inflation, oracle-count gaps and one-cell recovery.',
             },'report_seconds':time.perf_counter()-started}
     dump(root/'summary.json',result)
     manifest['development_report_complete' if development else 'report_complete']=True

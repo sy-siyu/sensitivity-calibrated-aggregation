@@ -1,9 +1,9 @@
-"""Fresh generators and numerical prerequisites for the retained assignment studies.
+"""Generators and numerical prerequisites for the assignment studies.
 
 SCA is the full-sample Coupled CP combined-family procedure. Independent CP,
 known masses, restricted families and split procedures are comparison controls
-or ablations. LTT is the statistical baseline. Legacy field names below retain
-the numerical modules' data contracts; no historical result files are required.
+or ablations. LTT is the statistical baseline. Compatibility fields preserve
+the numerical modules' data contracts.
 
 The generator uses the original NumPy multinomial/binomial calls and PCG64
 streams. Exact nominal laws retain the first K-1 stored binary masses and set
@@ -192,7 +192,7 @@ def evaluate_case(input_record,design,*,root_policy=None,fraction_choice_establi
                           for row in core['selections']],law)
         splits.append(dict(split,fraction=fraction,core=core,rows=rows))
     split_artifact={'version':'jmlr_statistical_baselines_v1','reproduction_version':VERSION,
-        'generation':'fresh observations, split/proposal/certificate calculations; no historical evidence import',
+        'generation':'generated observations, split/proposal/certificate calculations',
         'phase':phase,'metadata':metadata,'N':N,'T':T,'immutable_ids':ids,
         'reference':_truth_rows(reference,law),'splits':splits}
     # These aliases reproduce the old adapter schema. During development the
@@ -289,7 +289,7 @@ def run(workspace,config=None,limit=None):
         'complete':available==4800 and not failed,'completed_cases':available,'expected_cases':4800,
         'completed_new':completed_new,'checked_prefix_cases':seen,'bounded_prefix_limit':limit,
         'fraction_selection':frozen,'failures':failed,
-        'numerical_scope':'Fresh verified calculations on regenerated counts; no private saved numerical inputs'}
+        'numerical_scope':'Verified calculations on generated counts'}
     _write(root/'run_manifest.json',summary);return summary
 
 

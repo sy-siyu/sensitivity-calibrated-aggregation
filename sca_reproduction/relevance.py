@@ -1,10 +1,8 @@
-"""Portable current-paper empirical-relevance orchestration.
+"""Five-fraction LTT, propensity-logit clustering and RHC reproduction.
 
-This adapter consumes only artifacts generated in the same public workspace.
-It extends the historical one-fifth/one-half splits without changing them,
-selects one-third on the complete development panel, evaluates A--F coherently
-on 4,320 held-out datasets, adds a global one-dimensional clustering baseline,
-and runs the frozen RHC illustration when its verified public CSV is supplied.
+Uses assignment and release artifacts from the same workspace. The development
+panel selects one-third for the A--F comparison on 4,320 held-out datasets.
+The RHC illustration requires the checksum-verified public CSV.
 """
 from __future__ import annotations
 

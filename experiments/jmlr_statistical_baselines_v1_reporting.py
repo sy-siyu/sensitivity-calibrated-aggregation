@@ -475,39 +475,6 @@ def _normal_interval(row: dict[str,Any],prefix: str) -> str:
     return f"{_fmt(row.get(prefix+'_mean'))} [{_fmt(row.get(prefix+'_analytic_Normal95_lower'))}, {_fmt(row.get(prefix+'_analytic_Normal95_upper'))}]"
 
 
-def interpretation(summary: dict[str,Any]) -> dict[str,Any]:
-    primary=next((x for x in summary["grid_contrasts"] if x["phase"]=="final" and x["cap"]==Fraction(3,2)),None)
-    conditions=[x for x in summary["paired_conditions"] if x["phase"]=="final" and x["cap"]==Fraction(3,2)]
-    if not primary or primary["reference_advantage_pp_mean"] is None:
-        conclusion="The final comparison is incomplete; no completed-grid performance conclusion is available."
-        recommendation="Retain the completed evidence and report the precise missing grid; this run does not yet settle the LTT comparison."
-    else:
-        lower=primary["reference_advantage_pp_analytic_Normal95_lower"]
-        upper=primary["reference_advantage_pp_analytic_Normal95_upper"]
-        if not summary["status"]=="complete":
-            conclusion="The reported subset is incomplete and cannot establish the planned full-grid contrast."
-            recommendation="Do not promote the subset to the completed comparison. Preserve unfavorable and missing rows explicitly."
-        elif lower is not None and lower>0:
-            conclusion="The full-data coupled reference achieves greater mean compression than this split-LTT specialization on the fixed evaluation grid."
-            recommendation="The comparison strengthens the empirical assessment by establishing a scoped positive average compression difference against an established selection-guarantee framework specialized to distortion. Judge practical importance from the reported magnitude, identity frequencies, rare-state conditions and runtime rather than statistical sign alone. Keep the stronger all-partition guarantee and retrospective design explicit; the mean does not establish material dominance or superiority over all calibration procedures."
-        elif upper is not None and upper<0:
-            conclusion="Split LTT achieves greater mean compression than the full-data coupled reference on the fixed evaluation grid."
-            recommendation="Retain LTT as a strong statistical alternative and qualify a general compression-efficiency claim for the coupled method. This unfavorable comparison is scientifically useful; the fixed-law necessity and all-partition validity contributions remain distinct. Do not silently substitute LTT or propose an untested hybrid."
-        else:
-            conclusion="The fixed-grid mean contrast does not resolve an overall compression advantage at the displayed simulation precision."
-            recommendation="Present a mixed or unresolved comparison with its condition patterns and guarantee tradeoff. It strengthens the evaluation, but does not support an unqualified efficiency advantage."
-    def number(predicate):return sum(predicate(x) for x in conditions)
-    # The following assessment was written after review of this complete frozen
-    # panel. It is not a prespecified materiality threshold or a selection rule.
-    reviewed_assessment=("For these completed results, the roughly ten percentage-point compression difference, together with the stronger all-partition guarantee, materially strengthens the scoped complete-procedure comparison for the JMLR extension. The matched-split LTT advantage shows that this benefit cannot be attributed to coupled inference alone. Preserve the low-occupancy reversals and near parity in the high-sample balanced/moderate conditions; do not claim uniform dominance."
-                         if summary["status"]=="complete" else "No completed-panel practical assessment is available.")
-    return {"conclusion":conclusion,"recommendation":recommendation,"reviewed_assessment":reviewed_assessment,
-            "conditions_with_positive_reference_mean":number(lambda x:x["reference_advantage_pp_mean"]>0),
-            "conditions_with_negative_reference_mean":number(lambda x:x["reference_advantage_pp_mean"]<0),
-            "conditions_with_exact_zero_reference_mean":number(lambda x:x["reference_advantage_pp_mean"]==0),
-            "conditions_Student95_entirely_positive":number(lambda x:x["reference_advantage_pp_Student95_lower"] is not None and x["reference_advantage_pp_Student95_lower"]>0),
-            "conditions_Student95_entirely_negative":number(lambda x:x["reference_advantage_pp_Student95_upper"] is not None and x["reference_advantage_pp_Student95_upper"]<0),
-            "primary":primary}
 
 
 
