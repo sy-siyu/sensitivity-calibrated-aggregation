@@ -18,8 +18,7 @@ from . import analyses
 PROJECT = Path(__file__).resolve().parents[1]
 CURRENT_STUDIES = ('assignment','release','certification','relevance','recovery',
                    'efficiency','precision','outcome','computation')
-LEGACY_STUDIES = ('split',)
-STUDIES = CURRENT_STUDIES + LEGACY_STUDIES
+STUDIES = CURRENT_STUDIES
 
 
 def _configuration(path):
@@ -58,7 +57,7 @@ def _run(study, workspace, config, data, limit=None, rhc_data=None):
         result=assignment.run(workspace,limit=limit)
         if result['failures']:raise RuntimeError('Assignment failures retained; inspect run_manifest.json')
         return result
-    if study in ('efficiency','recovery','split'):
+    if study in ('efficiency','recovery'):
         return analyses.run(workspace,study,limit=limit,config=config)
     if study == 'certification':
         return certification.run(workspace,limit=limit)
@@ -133,7 +132,7 @@ def _partial_report(root, study):
 def _report(study,workspace,config):
     workspace=Path(workspace).resolve();root=workspace/study
     if study=='assignment':return assignment.report(workspace)
-    if study in ('efficiency','recovery','split'):return analyses.report(workspace,study)
+    if study in ('efficiency','recovery'):return analyses.report(workspace,study)
     if study=='certification':return certification.report(
         workspace,require_complete=config['profile']=='full-paper')
     if study=='relevance':return relevance.report(

@@ -18,17 +18,17 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from sca import SCA, analyze_release
+from sca import SCA
 from experiments import jmlr_verified_adaptive_v1_math as exact
 from experiments.jmlr_verified_adaptive_v1_roots import RootPolicy, RootVerifier
 from experiments.jmlr_verified_pipeline_v1_arithmetic import cell_certificate
 from experiments.jmlr_verified_pipeline_v1_core import exact_order, select_families
 from experiments.jmlr_release_capacity_v1_search import candidate_cells, capacity_search
-from experiments.jmlr_release_capacity_v1_interface import CONFIDENCE, release_bytes
+from experiments.jmlr_release_capacity_v1_interface import CONFIDENCE, release_bytes, export_release, analyze_release
 from experiments.jmlr_outcome_inference_v1_core import (
     ALPHA_CAL, ALPHA_Z, confidence_enclosure, outcome_family, project_assignment,
 )
-from experiments.jmlr_statistical_baselines_v1_reporting import paired, rate
+from sca_reproduction.statistics import paired, rate
 
 
 POLICY = RootPolicy(max_trials=2_000_000)
@@ -189,7 +189,7 @@ class PublicSelection(unittest.TestCase):
         self.assertTrue(infinite.optimization_completed)
         self.assertIsNone(infinite.certificate)
         self.assertFalse(infinite.admissible())
-        with self.assertRaises(ValueError): infinite.release(self.N, self.T, (0,)*4)
+        with self.assertRaises(ValueError): infinite.release_outcomes(self.T, (0,)*4)
         with patch('sca.api.cell_certificate', side_effect=record('failure')):
             unknown = self.fit(capacity=1)
             safe = self.fit()
@@ -223,7 +223,8 @@ class PublicAggregateAnalyst(unittest.TestCase):
         cls.cal_T = (0, 1600, 2400, 4000)
         cls.result = SCA(root_policy=POLICY).fit(cls.cal_N, cls.cal_T, cap=1)
         cls.N, cls.T, cls.V = (0, 10, 20, 30), (0, 0, 10, 15), (0, 0, 4, 8)
-        cls.artifact = cls.result.release(cls.N, cls.T, cls.V)
+        cls.artifact = export_release(cls.result._region, cls.result.partition, cls.result._records,
+                                      cls.N, cls.T, cls.V)
         cls.analysis = analyze_release(cls.artifact)
 
     def test_declared_unobserved_state_is_in_identity_and_release(self):

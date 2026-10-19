@@ -46,18 +46,7 @@ The objectives can return different partitions. A partition belongs to one const
 
 ## Infer outcomes and release aggregates
 
-For binary outcomes, use treated-success counts:
-
-```python
-from sca import analyze_release
-
-artifact = fit.release(outcome_N, outcome_T, treated_successes)
-analysis = analyze_release(artifact)
-```
-
-This API exports every selected group, including groups with no treated observations, and reconstructs from anonymous aggregate counts and certified summaries.
-
-For general confidence allocation, bounded outcomes, mass drift, and analyst reconstruction, supply treated counts and treated-outcome sums:
+Use `release_outcomes` and `analyze_outcome_release` for both binary and bounded outcomes. For binary outcomes, pass treated counts and treated-success counts with `branch="binary"`. For bounded outcomes, pass treated counts, outcome sums and prespecified bounds:
 
 ```python
 from fractions import Fraction
@@ -143,7 +132,7 @@ python -m sca_reproduction plot release --workspace outputs/paper
 python -m sca_reproduction plot precision --workspace outputs/paper
 ```
 
-`plot split` reads the current `relevance` report when present. `plot computation` generates an additional computational diagnostic. The separate `run split` command reproduces the earlier two-fraction comparison; `run all` uses the five-fraction `relevance` study.
+`plot split` reads the five-fraction `relevance` report. `plot computation` generates an additional computational diagnostic.
 
 Exact rational rows are stored in JSON outputs; CSV summaries are rounded/display-oriented. Reporters refuse to treat a bounded prefix as a completed full panel. See [reproduction details](docs/REPRODUCTION.md) and the [paper-to-code map](docs/PAPER_RESULTS.md).
 

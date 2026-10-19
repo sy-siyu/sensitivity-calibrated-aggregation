@@ -71,7 +71,7 @@ Label: `fig:split-search-contrasts`. Generate with:
 python -m sca_reproduction plot split --workspace outputs/paper
 ```
 
-Output: `paper_figures/split_search_contrasts.{pdf,png}`. When `relevance/` exists, plotting reads `relevance/tables/ltt_contrasts.csv`. Every point uses 48 conditions × 90 paired evaluation datasets. Positive values favor the named left procedure. The display includes `C-B`, `D-C`, `E-D`, `F-E`, `C-A`, `F-C`, and `F-A` with pointwise normal Monte Carlo intervals.
+Output: `paper_figures/split_search_contrasts.{pdf,png}`. Plotting requires `relevance/tables/ltt_contrasts.csv`. Every point uses 48 conditions × 90 paired evaluation datasets. Positive values favor the named left procedure. The display includes `C-B`, `D-C`, `E-D`, `F-E`, `C-A`, `F-C`, and `F-A` with pointwise normal Monte Carlo intervals.
 
 ### Figure 4 — Reporting capacity, certificates, and true distortion
 
@@ -119,7 +119,7 @@ The RHC primary split uses 4,014 calibration and 1,721 outcome records. At capac
 
 Stable labels: `sec:finite-outcome-inference`, `eq:outcome-error-allocation`, `thm:finite-outcome-inference`, `cor:outcome-mass-drift`, and `eq:drifted-mass-box`.
 
-The executable counterparts are `SCAResult.infer_outcomes`, `SCAResult.release_outcomes`, `analyze_outcome_release`, and `confidence_allocation`, with examples `example-bounded` and `example-drift`. Focused tests verify binary backward compatibility, bounded affine rescaling, normalized-scale intersection, recorded precision reconstruction, supplied mass drift, capacity enforcement, and corrected sensitivity-ceiling enforcement.
+The executable counterparts are `SCAResult.infer_outcomes`, `SCAResult.release_outcomes`, `analyze_outcome_release`, and `confidence_allocation`, with examples `example-bounded` and `example-drift`. Focused tests verify binary inference, bounded affine rescaling, normalized-scale intersection, recorded precision reconstruction, supplied mass drift, capacity enforcement, and corrected sensitivity-ceiling enforcement.
 
 ## Additional outputs
 

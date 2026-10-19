@@ -9,10 +9,16 @@ class PublicInferenceAPITests(unittest.TestCase):
         self.N = (80, 80)
         self.T = (24, 56)
 
-    def test_existing_binary_release_call_remains_available(self):
-        result = SCA().fit(self.N, self.T, cap='3/2')
-        artifact = result.release((60, 60), (20, 40), (8, 30))
-        self.assertEqual(artifact['version'], 'jmlr_release_capacity_v1')
+    def test_binary_release_reconstructs_through_the_current_api(self):
+        result = SCA().fit(self.N, self.T, cap='1')
+        artifact = result.release_outcomes((0, 40), (0, 30), branch='binary')
+        analyst = analyze_outcome_release(artifact)
+        provider = result.infer_outcomes((0, 40), (0, 30), branch='binary')
+        self.assertEqual(len(artifact['groups']), 2)
+        for method in ('z_global', 'z_cellwise'):
+            self.assertEqual(analyst['methods'][method]['interval'],
+                             provider['methods'][method]['interval'])
+        self.assertTrue(analyst['admission_verified'])
 
     def test_bounded_release_reconstructs_with_recorded_precision(self):
         result = SCA().fit(self.N, self.T, cap='10')

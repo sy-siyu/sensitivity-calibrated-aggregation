@@ -12,7 +12,6 @@ import numpy as np
 from sca_reproduction import assignment
 from experiments import jmlr_verified_adaptive_v1_math as exact
 from experiments.jmlr_verified_adaptive_v1_roots import RootPolicy,RootVerifier
-from experiments.jmlr_split_ablation_v1_inputs import load_dataset
 
 
 class AssignmentGenerators(unittest.TestCase):
@@ -111,7 +110,7 @@ class BoundedFreshAssignment(unittest.TestCase):
         self.assertEqual(self.first['completed_cases'],1)
         self.assertEqual(self.first['failures'],[])
         self.assertEqual(tuple(s['fraction'] for s in self.split['splits']),('1/5','1/2'))
-        self.assertFalse(self.full['baseline']['fraction_choice_established'])
+        self.assertNotIn('frozen_fraction', self.full['baseline'])
         self.assertFalse((self.root/'fraction_selection.json').exists())
         self.assertFalse((self.root/'splits/evidence/evaluation').exists())
         self.assertTrue(self.full['baseline']['source_inference_recomputed'])
@@ -138,14 +137,6 @@ class BoundedFreshAssignment(unittest.TestCase):
             self.assertEqual(len(split['rows']),6)
             self.assertEqual(split['core']['ltt_evidence']['alpha'],F(1,20))
 
-    def test_legacy_read_only_adapter_accepts_newly_recomputed_artifacts(self):
-        with patch.object(RootVerifier,'interval',side_effect=AssertionError('Adapter must not compute roots')):
-            result=load_dataset(self.split_path,self.full_path,expected_policy=RootPolicy())
-        self.assertEqual(result['phase'],'development')
-        self.assertEqual(len(result['references']),9)
-        self.assertEqual({r['procedure'] for r in result['references']},{'A','B','F'})
-        self.assertEqual(result['metadata']['replication'],0)
-        self.assertEqual(len(result['candidates']),16)
 
     def test_generated_inputs_and_completed_pairs_resume_without_recomputation(self):
         before=(self.full_path.read_bytes(),self.split_path.read_bytes())
@@ -153,7 +144,7 @@ class BoundedFreshAssignment(unittest.TestCase):
             result=assignment.run(self.workspace,limit=1)
         self.assertEqual(result['completed_new'],0)
         self.assertEqual(before,(self.full_path.read_bytes(),self.split_path.read_bytes()))
-        self.assertFalse(assignment.freeze_fraction(self.workspace)['complete'])
+        self.assertNotIn('fraction_selection', result)
 
     def test_generated_report_does_not_claim_complete_panel(self):
         result=assignment.report(self.workspace)

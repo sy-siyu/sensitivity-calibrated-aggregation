@@ -15,9 +15,6 @@ class DesignAndScope(unittest.TestCase):
         self.assertTrue(analyses.EFFICIENCY_LABELS['original'].startswith('SCA'))
         self.assertFalse(analyses.EFFICIENCY_LABELS['allocation_control'].startswith('SCA'))
         self.assertFalse(analyses.EFFICIENCY_LABELS['pooled_alternative'].startswith('SCA'))
-        self.assertTrue(analyses.SPLIT_LABELS['F'].startswith('SCA'))
-        self.assertIn('LTT baseline',analyses.SPLIT_LABELS['A'])
-        self.assertTrue(all(not analyses.SPLIT_LABELS[p].startswith('SCA') for p in 'BCDE'))
 
     def test_default_grids_and_component_smoke_override(self):
         cfg=analyses._configuration('efficiency')
@@ -51,10 +48,10 @@ class FreshDownstreamAdapters(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # One declared K16 development dataset is enough to exercise the
-        # original strict count/seed/proposal/region adapter. No full panel.
+        # current development and evaluation paths. No full panel.
         cls.design=assignment.build_design()
         cls.input=assignment.draw_case(0,0,0,cls.design)
-        cls.full,cls.split=assignment.evaluate_case(cls.input,cls.design,fraction_choice_established=False)
+        cls.full,cls.split=assignment.evaluate_case(cls.input,cls.design)
 
     def source_workspace(self,directory):
         workspace=Path(directory);root=workspace/'assignment'
@@ -88,25 +85,23 @@ class FreshDownstreamAdapters(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 analyses.run_efficiency(workspace)
 
-    def test_split_uses_fresh_proposals_and_preserves_development_scope(self):
-        with tempfile.TemporaryDirectory(prefix='sca-fresh-split-') as directory:
-            workspace,full,split=self.source_workspace(directory)
-            saved=(full.read_bytes(),split.read_bytes())
-            result=analyses.run_split(workspace,limit=1)
-            self.assertTrue(result['development_fixture'])
-            self.assertEqual(result['status'],'incomplete')
-            self.assertEqual(result['evaluation_datasets'],0)
-            self.assertEqual(result['new_records'],1)
-            paths=list((workspace/'split/preflight').glob('*/rep000.json.gz'))
-            record=analyses._load(paths[0])
-            self.assertEqual(len(record['rows']),18)
-            self.assertEqual({r['procedure'] for r in record['rows']},set('ABCDEF'))
-            self.assertTrue(record['checks']['all_saved_proposals_in_pilot_family'])
-            self.assertFalse(list((workspace/'split/panel').glob('*/rep*.json.gz')))
-            self.assertEqual((full.read_bytes(),split.read_bytes()),saved)
-            self.assertEqual(analyses.report(workspace,'split')['status'],'incomplete')
-            with self.assertRaises(FileNotFoundError):
-                analyses.run_split(workspace)
+
+    def test_current_evaluation_needs_no_old_fraction_choice_or_evidence(self):
+        from unittest.mock import patch
+        from experiments.jmlr_empirical_relevance_v1_core import evaluate_selected_ltt_with_ablation
+        from experiments.jmlr_verified_adaptive_v1_roots import RootPolicy
+        source = assignment.draw_case(0, 0, 10, self.design)
+        with patch.object(assignment.split_core, 'evaluate_split',
+                          side_effect=AssertionError('Assignment must not evaluate the old split')):
+            full, base = assignment.evaluate_case(source, self.design)
+        self.assertEqual(base['splits'], [])
+        self.assertEqual(full['baseline']['splits'], [])
+        current = evaluate_selected_ltt_with_ablation(
+            source['N'], source['T'], 0, 0, 10, source['immutable_ids'],
+            self.design['tree_orders']['16'], RootPolicy().__dict__,
+            full, self.design['laws'][0])
+        self.assertEqual({row['procedure'] for row in current['rows']}, set('ABCDEF'))
+        self.assertEqual(len(current['rows']), 18)
 
     def test_recovery_is_standalone_exact_count_generation_not_an_archive(self):
         with tempfile.TemporaryDirectory(prefix='sca-fresh-recovery-') as directory:

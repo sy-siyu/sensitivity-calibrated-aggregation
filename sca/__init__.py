@@ -8,7 +8,7 @@ from experiments.jmlr_inference_extensions_v1 import (
     ConfidenceAllocation,
     confidence_allocation,
 )
-from .api import SCA, SCAResult, analyze_outcome_release, analyze_release
+from .api import SCA, SCAResult, analyze_outcome_release
 
 __all__ = ['SCA', 'SCAResult', 'ConfidenceAllocation', 'confidence_allocation',
-           'analyze_release', 'analyze_outcome_release']
+           'analyze_outcome_release']

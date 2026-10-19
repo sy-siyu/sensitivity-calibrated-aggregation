@@ -30,12 +30,7 @@ python -m sca_reproduction run all --workspace outputs/paper
 python -m sca_reproduction report all --workspace outputs/paper
 ```
 
-The `all` sequence is `assignment`, `release`, `certification`, `relevance`, `recovery`, `efficiency`, `precision`, `outcome`, `computation`. The separate `split` runner reproduces the earlier two-fraction comparison. Its versioned configurations are:
-
-- `configs/jmlr_statistical_baselines_v1_legacy_20261019.json`
-- `configs/jmlr_split_ablation_v1_legacy_20261019.json`
-
-They are not used for the current Table 4 or Figure 3.
+The `all` sequence is `assignment`, `release`, `certification`, `relevance`, `recovery`, `efficiency`, `precision`, `outcome`, `computation`.
 
 ## Finite-sample certification outputs
 

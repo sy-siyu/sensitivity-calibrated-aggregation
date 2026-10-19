@@ -78,6 +78,5 @@
     "benchmark_tasks": {"observed_splits": 1, "release_blocks": 1, "ltt_development_datasets": 1},
     "forecast_safety_factor": 1.5
   },
-  "historical_configuration_snapshots": ["configs/jmlr_statistical_baselines_v1_legacy_20261019.json", "configs/jmlr_split_ablation_v1_legacy_20261019.json"],
   "interpretation": "observed-data illustration, propensity-logit clustering comparison, and retrospective five-fraction LTT comparison; RHC splits are dependent stability analyses with fixed preprocessing, rather than coverage trials"
 }

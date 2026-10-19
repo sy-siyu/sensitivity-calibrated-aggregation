@@ -32,10 +32,6 @@ EFFICIENCY_LABELS = {
     'original':'SCA (Coupled CP)',
     'allocation_control':'Allocation-control ablation',
     'pooled_alternative':'Certificate-construction ablation: pooled assignment bounds'}
-SPLIT_LABELS = {
-    'A':'Split LTT baseline','B':'Held-out first-failure ablation',
-    'C':'Held-out all-proposals ablation','D':'Full-sample proposal-list ablation',
-    'E':'Pilot-order family ablation','F':'SCA (Coupled CP)'}
 
 
 def _now():
@@ -66,20 +62,9 @@ def _merge(base,updates):
 
 
 def _defaults(study):
-    if study=='efficiency':
-        fallback={'version':'jmlr_efficiency_gap_v1','caps':['5/4','3/2','2'],
-            'root_policy':dict(POLICY),'recovery_root_policy':dict(POLICY,max_trials=4000000),
-            'recovery':{'replications':300,'sample_sizes':list(RECOVERY_SIZES),
-                'master_seed':2026101603,'development_seed':202610160301,
-                'theoretical_eta':'1/4'},
-            'execution':{'workers':1,'root_cache_entries':20000,'root_cache_trim_threshold':30000}}
-    else:
-        fallback={'version':'jmlr_split_ablation_v1','caps':['5/4','3/2','2'],
-            'root_policy':dict(POLICY),'evaluation_replications':[10,100],
-            'pilot_fraction':'1/5','alpha':'1/20','mass_mode':'unknown_mass',
-            'execution':{'workers':1,'timing_scope':'Additional computation on newly generated assignment evidence; not a cold method comparison'}}
-    filename=PROJECT/'configs'/('jmlr_efficiency_gap_v1.json' if study=='efficiency' else 'jmlr_split_ablation_v1.json')
-    return _merge(fallback,_load(filename)) if filename.exists() else fallback
+    if study != 'efficiency':
+        raise ValueError('Expected efficiency configuration')
+    return _load(PROJECT/'configs/jmlr_efficiency_gap_v1.json')
 
 
 def _configuration(study,config=None):
@@ -94,18 +79,13 @@ def _configuration(study,config=None):
         config=config['studies']
     if study in config and isinstance(config[study],dict):
         config=config[study]
-    elif any(key in config for key in ('assignment','release','precision','computation','outcome','split','efficiency')):
+    elif any(key in config for key in ('assignment','release','precision','computation','outcome','efficiency')):
         config={}
     result=_merge(_defaults(study),config)
     result.setdefault('execution',{})['workers']=1
-    if study=='efficiency':
-        result.update(output_dir='efficiency',historical_source='assignment',release_source='release')
-    else:
-        result.update(output_dir='split',split_source='assignment/splits',full_source='assignment')
+    result.update(output_dir='efficiency',historical_source='assignment',release_source='release')
     if tuple(F(c) for c in result['caps'])!=CAPS:
         raise ValueError('These analyses preserve the three declared rational distortion caps')
-    if study=='split' and (result.get('pilot_fraction')!='1/5' or result.get('alpha')!='1/20'):
-        raise ValueError('Split ablation preserves the declared one-fifth split and allocation')
     if result['root_policy']!=POLICY:
         raise ValueError('Retained analyses preserve the complete historical root policy')
     if study=='efficiency':
@@ -316,76 +296,14 @@ def run_recovery(workspace,limit=None,config=None):
     return result
 
 
-def prepare_split(workspace,config=None):
-    """Bind strictly matched fresh split/proposal/full-calibration evidence."""
-    workspace=Path(workspace).resolve();root=workspace/'split';assignment=workspace/'assignment'
-    cfg=_load(root/'configuration.json') if config is None and (root/'configuration.json').exists() else _configuration('split',config)
-    if tuple(cfg['evaluation_replications'])!=(10,100):
-        raise ValueError('The split ablation retains evaluation replications10–99')
-    split_root=assignment/'splits';conditions=[]
-    folders={p.parent for phase in ('development','evaluation')
-             for p in (split_root/'evidence'/phase).glob('*/rep*.json.gz')}
-    for folder in sorted(folders,key=lambda p:p.name):
-        first=next(iter(sorted(folder.glob('rep*.json.gz'))));metadata=_load(first)['metadata']
-        entry={'condition_id':folder.name,**{k:v for k,v in metadata.items() if k!='replication'}}
-        if entry not in conditions:
-            conditions.append(entry)
-    protocol={'version':cfg['version'],'configuration':cfg,'frozen_utc':_now(),
-        'conditions':conditions,'split_root':'assignment/splits','full_root':'assignment',
-        'exact_law_path':'assignment/exact_laws.json',
-        'source_validation':{'source':'fresh public assignment/proposal generation',
-            'validator':'jmlr_split_ablation_v1_inputs.load_dataset checks full/split counts, seeds, regions, allocations, family membership and A/B/F decisions'},
-        'scope':'Fresh matched reproduction of the declared split ablation; full evaluation is48×90 datasets',
-        'procedure_labels':SPLIT_LABELS,
-        'public_default':'SCA is F (full sample, Coupled CP, complete combined family); A is LTT baseline, B–E are ablations.'}
-    # _frozen also guards unchanged recovery geometry; both absent here.
-    return _frozen(root,protocol)
 
 
-def run_split(workspace,limit=None,config=None):
-    from experiments.jmlr_split_ablation_v1 import process_dataset
-    workspace=Path(workspace).resolve();root=workspace/'split';frozen=prepare_split(workspace,config)
-    protocol=dict(frozen)
-    for key in ('split_root','full_root','exact_law_path'):
-        protocol[key]=str(workspace/protocol[key])
-    paths=sorted((Path(protocol['split_root'])/'evidence/evaluation').glob('*/rep*.json.gz'))
-    if limit is None and (len(paths)!=4320 or len(frozen['conditions'])!=48):
-        raise FileNotFoundError('Full split ablation requires fresh assignment development/fraction selection and all4320 evaluation records')
-    if limit is None:
-        choice_path=workspace/'assignment/fraction_selection.json'
-        choice=_load(choice_path) if choice_path.exists() else {}
-        if (choice.get('complete') is not True or choice.get('selected_fraction')!='1/5'
-                or choice.get('evaluation_data_used') is not False
-                or choice.get('datasets_per_fraction')!={'1/5':480,'1/2':480}):
-            raise ValueError('Full split reproduction requires the newly computed independent480-dataset fraction choice')
-    development=not paths and limit is not None
-    if development:
-        paths=sorted((Path(protocol['split_root'])/'evidence/development').glob('*/rep*.json.gz'))
-    written=0;conditions={r['condition_id']:r for r in frozen['conditions']}
-    for source in _limit(paths,limit):
-        replication=int(source.name[3:6]);condition=conditions[source.parent.name]
-        if not development and not 10<=replication<100:
-            raise ValueError('Development source cannot enter an evaluation panel')
-        destination=root/('preflight' if development else 'panel')/condition['condition_id']/source.name
-        if destination.exists():
-            continue
-        started=time.perf_counter();record=process_dataset(condition,replication,protocol)
-        record['public_scope']='development_fixture' if development else 'evaluation'
-        record['peak_rss_bytes']=int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)*(1 if sys.platform=='darwin' else 1024)
-        record['worker_seconds_before_serialization']=time.perf_counter()-started
-        _dump(destination,record);written+=1
-    completed=len(list((root/'panel').glob('*/rep*.json.gz')))
-    result={'study':'split','status':'complete' if completed==4320 else 'incomplete',
-        'new_records':written,'evaluation_datasets':completed,'expected_evaluation_datasets':4320,
-        'development_fixture':development,'scope':'LTT baseline and descriptive ablations against the one SCA default; no retuning'}
-    _dump(root/'execution_summary.json',result)
-    return result
 
 
 def run(workspace,study,limit=None,config=None):
-    functions={'efficiency':run_efficiency,'recovery':run_recovery,'split':run_split}
+    functions={'efficiency':run_efficiency,'recovery':run_recovery}
     if study not in functions:
-        raise ValueError('Expected efficiency, recovery or split')
+        raise ValueError('Expected efficiency or recovery')
     return functions[study](workspace,limit=limit,config=config)
 
 
@@ -394,9 +312,9 @@ def _partial_report(root,study,paths):
     from experiments.jmlr_efficiency_gap_v1_reporting import _csv
     from experiments.jmlr_verified_adaptive_v1_math import encode
     counts=Counter();rows=[]
-    labels=SPLIT_LABELS if study=='split' else EFFICIENCY_LABELS
+    labels=EFFICIENCY_LABELS
     for path in paths:
-        record=_load(path);kind=record.get('task',['split'])[0];counts[kind]+=1
+        record=_load(path);kind=record.get('task',['assignment'])[0];counts[kind]+=1
         for row in record.get('rows',()):
             copied=dict(row,evidence_file=str(path.relative_to(root)))
             copied['procedure_label']=labels.get(row.get('procedure'),row.get('procedure'))
@@ -457,16 +375,8 @@ def _recovery_report(root):
 def report(workspace,study):
     """Dispatch complete original statistics; bounded prefixes stay explicit."""
     workspace=Path(workspace).resolve()
-    if study=='split':
-        root=workspace/'split';paths=sorted((root/'panel').glob('*/rep*.json.gz'))
-        if len(paths)==4320:
-            from experiments.jmlr_split_ablation_v1_reporting import generate
-            return generate(root)
-        if not paths:
-            paths=sorted((root/'preflight').glob('*/rep*.json.gz'))
-        return _partial_report(root,study,paths)
     if study not in ('efficiency','recovery'):
-        raise ValueError('Expected efficiency, recovery or split')
+        raise ValueError('Expected efficiency or recovery')
     root=workspace/'efficiency';counts=_efficiency_counts(root)
     if study=='efficiency' and counts=={'historical':4800,'release':300,'recovery':300}:
         from experiments.jmlr_efficiency_gap_v1_reporting import report as full_report

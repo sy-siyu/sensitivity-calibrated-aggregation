@@ -19,17 +19,6 @@ def meta(condition, rep):
     return {'id': law, 'r': r, 'K': int(law.split('_')[0][1:]), 'replication': rep}
 
 
-def grid(groups, prefix):
-    means = [statistics.fmean(map(float, values)) for values in groups]
-    se = math.sqrt(sum(statistics.variance(map(float, values))/len(values)
-                       for values in groups))/len(groups)
-    mean = statistics.fmean(means)
-    radius = statistics.NormalDist().inv_cdf(.975)*se
-    return {prefix+'_conditions': len(groups), prefix+'_expected_conditions': len(groups),
-            prefix+'_paired_datasets': sum(map(len, groups)), prefix+'_all_conditions_present': True,
-            prefix+'_mean': mean, prefix+'_MCSE': se,
-            prefix+'_analytic_Normal95_lower': mean-radius,
-            prefix+'_analytic_Normal95_upper': mean+radius}
 
 
 def continuous(values):
@@ -75,40 +64,24 @@ def efficiency(assignment_index):
     return rows, summaries
 
 
-def splits():
-    rows, methods, pairs, contrasts = [], [], [], []
-    values = {}
-    for condition in CONDITIONS:
-        for rep in (10, 11):
-            m = meta(condition, rep); K = m['K']
-            counts = dict(A=K-2-(rep % 2), B=K-1, C=K-2, D=K-3, E=K-5, F=K-4)
-            for procedure, cells in counts.items():
-                compression = F(100*(K-cells), K)
-                values[condition, rep, procedure] = compression
-                rows.append({**m, 'procedure': procedure, 'cap': F(3, 2), 'cells': cells,
-                    'compression_pp': compression, 'count_optimal': True,
-                    'computation_status': 'imported_preserved_selection' if procedure in 'ABF' else 'finite',
-                    'computation_complete': True, 'deterministic_tie_complete': True,
-                    'identity': False, 'identity_fallback': False})
-            pair = {**m, 'cap': F(3, 2), 'accounting_identity_exact': True}
-            pair.update({contrast+'_pp': values[condition, rep, contrast[0]]-values[condition, rep, contrast[2]]
-                         for contrast in paper.CONTRASTS})
-            pairs.append(pair)
-    for procedure in 'ABCDEF':
-        groups = [[values[c, r, procedure] for r in (10, 11)] for c in CONDITIONS]
-        methods.append({'scope': 'all', 'cap': F(3, 2), 'procedure': procedure,
-                        'procedure_name': 'Fixture '+procedure, **grid(groups, 'compression_pp')})
-    for contrast in paper.CONTRASTS:
-        groups = [[values[c, r, contrast[0]]-values[c, r, contrast[2]] for r in (10, 11)] for c in CONDITIONS]
-        all_values = [v for group in groups for v in group]
-        means = [sum(group)/len(group) for group in groups]
-        contrasts.append({'scope': 'all', 'cap': F(3, 2), 'contrast': contrast,
-            **grid(groups, 'difference_pp'), 'wins': sum(v > 0 for v in all_values),
-            'ties': sum(v == 0 for v in all_values), 'losses': sum(v < 0 for v in all_values),
-            'conditions_mean_positive': sum(v > 0 for v in means),
-            'conditions_mean_zero': sum(v == 0 for v in means),
-            'conditions_mean_negative': sum(v < 0 for v in means)})
-    return rows, methods, pairs, contrasts
+
+
+def relevance_tables():
+    values = dict(A=10, B=8, C=9, D=12, E=23, F=22)
+    common = dict(cap='3/2', selected_fraction='1/3', conditions=48, datasets=4320)
+    def interval(prefix, value):
+        return {prefix+'_mean': value, prefix+'_MCSE': .1,
+                prefix+'_analytic_Normal95_lower': value-.196,
+                prefix+'_analytic_Normal95_upper': value+.196}
+    methods = [dict(common, procedure=name, **interval('compression_percent', value))
+               for name,value in values.items()]
+    contrasts=[]
+    for name in paper.CONTRASTS:
+        value=values[name[0]]-values[name[2]]
+        contrasts.append(dict(common, contrast=name, **interval('difference_pp',value),
+            wins=4320 if value>0 else 0, ties=4320 if value==0 else 0,
+            losses=4320 if value<0 else 0))
+    return methods,contrasts
 
 
 def precision():
@@ -177,29 +150,31 @@ class PaperTableNumerics(unittest.TestCase):
         bad = deepcopy(rows); bad[0]['selected_certificate'] = F(7, 5)
         with self.assertRaises(ValueError): paper._efficiency(bad, summaries, source, conditions=CONDITIONS, reps=range(2))
 
-    def test_split_means_eight_contrasts_signed_accounting_and_fractions(self):
-        fixtures = splits()
-        methods, contrasts, checks = paper._split(*fixtures, conditions=CONDITIONS, reps=range(10, 12))
-        self.assertEqual(len(methods), 6); self.assertEqual(len(contrasts), 8)
-        self.assertEqual(checks['accounting_exact'], 4)
-        self.assertEqual(checks['structural_checks'], {'C_le_B': 4, 'E_le_D': 4})
-        self.assertTrue(all(row['selection_unresolved'] == 0 for row in methods))
-        by_name = {r['contrast']: r for r in contrasts}
-        self.assertEqual(by_name['F-E']['losses_fraction_exact'], 1)
-        self.assertLess(by_name['F-E']['difference_pp_mean'], 0)
-        self.assertAlmostEqual(by_name['F-A']['difference_pp_mean'],
-            sum(by_name[c]['difference_pp_mean'] for c in ('B-A', 'C-B', 'D-C', 'E-D', 'F-E')))
-        self.assertEqual(by_name['C-B']['wins'], 4)
-        self.assertEqual(by_name['C-B']['datasets'], 4)
 
-    def test_split_incomplete_grid_pair_and_wrong_win_counts_refused(self):
-        fixtures = splits()
-        bad = deepcopy(fixtures); bad[1][0]['compression_pp_paired_datasets'] = 3
-        with self.assertRaises(ValueError): paper._split(*bad, conditions=CONDITIONS, reps=range(10, 12))
-        bad = deepcopy(fixtures); bad[2].pop()
-        with self.assertRaises(ValueError): paper._split(*bad, conditions=CONDITIONS, reps=range(10, 12))
-        bad = deepcopy(fixtures); bad[3][0]['wins'] = 0
-        with self.assertRaises(ValueError): paper._split(*bad, conditions=CONDITIONS, reps=range(10, 12))
+
+    def test_current_relevance_preserves_signed_contrasts(self):
+        methods, contrasts, checks = paper._current_relevance(*relevance_tables())
+        self.assertEqual(len(methods), 6)
+        self.assertEqual(len(contrasts), 8)
+        self.assertEqual(checks['selected_fraction'], '1/3')
+        by_name = {row['contrast']: row for row in contrasts}
+        self.assertEqual(by_name['F-E']['difference_pp_mean'], -1)
+        self.assertEqual(by_name['F-E']['losses'], 4320)
+        self.assertEqual(by_name['F-A']['difference_pp_mean'], 12)
+
+    def test_old_fraction_and_incomplete_current_tables_are_rejected(self):
+        methods, contrasts = relevance_tables()
+        methods[0]['selected_fraction']='1/5'
+        with self.assertRaises(ValueError): paper._current_relevance(methods, contrasts)
+        methods, contrasts = relevance_tables()
+        contrasts[0]['datasets']=4319
+        with self.assertRaises(ValueError): paper._current_relevance(methods, contrasts)
+        methods, contrasts = relevance_tables()
+        contrasts[0]['wins']=0
+        with self.assertRaises(ValueError): paper._current_relevance(methods, contrasts)
+        methods, contrasts = relevance_tables()
+        contrasts[0]['difference_pp_mean']+=1
+        with self.assertRaises(ValueError): paper._current_relevance(methods, contrasts)
 
     def test_precision_keeps_negative_increment_and_all_blocks_without_admission_filter(self):
         rows, summaries = precision()

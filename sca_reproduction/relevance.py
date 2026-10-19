@@ -86,14 +86,14 @@ def _bounded(paths, limit):
     return paths[:limit]
 
 
-def _historical_development_rows(full):
+def _base_development_rows(full):
     answer = []
     for split in full['baseline']['splits']:
         for row in split['rows']:
             answer.append({'fraction': split['fraction'], 'procedure': row['procedure'],
                            'cap': row['cap'], 'cells': row['cells'],
                            'compression': row['compression'], 'status': row['status'],
-                           'partition': row['partition'], 'source': 'legacy-preserved'})
+                           'partition': row['partition'], 'source': 'assignment-base-fraction'})
     return answer
 
 
@@ -102,7 +102,7 @@ def _development_block(full, design, cfg):
     new = evaluate_new_ltt_fractions(
         full['core']['N'], full['core']['T'], meta['population_index'], meta['r_index'],
         meta['replication'], tuple(range(K)), design['tree_orders'][str(K)], cfg['root_policy'])
-    rows = _historical_development_rows(full)
+    rows = _base_development_rows(full)
     for evaluation in new:
         for row in evaluation['rows']:
             rows.append({'fraction': evaluation['fraction'], 'procedure': row['procedure'],

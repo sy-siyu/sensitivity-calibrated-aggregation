@@ -145,25 +145,18 @@ def _load_efficiency(root, partial):
 
 def _load_split(root, partial):
     summary = _summary(root, partial)
-    current = (root/'tables/ltt_contrasts.csv').is_file()
-    if current:
-        if not partial:
-            _require(summary.get('selected_fraction') == '1/3',
-                     'Current split figure requires selected fraction 1/3')
-            _require(summary.get('counts', {}).get('ltt_evaluation') == 4320,
-                     'Current split figure requires 4,320 evaluation datasets')
-        rows = [r for r in _rows(root/'tables/ltt_contrasts.csv')
-                if _cap(r) == Fraction(3,2) and r.get('contrast') in dict(CONTRASTS)]
-    else:
-        rows = [r for r in _rows(root/'tables/paired_grid.csv')
-                if r.get('scope') == 'all' and _cap(r) == Fraction(3,2)
-                and r.get('contrast') in dict(CONTRASTS)]
+    _require(summary.get('selected_fraction') == '1/3',
+             'Split figure requires selected fraction 1/3')
+    if not partial:
+        _require(summary.get('counts', {}).get('ltt_evaluation') == 4320,
+                 'Split figure requires 4,320 evaluation datasets')
+    rows = [r for r in _rows(root/'tables/ltt_contrasts.csv')
+            if _cap(r) == Fraction(3,2) and r.get('contrast') in dict(CONTRASTS)]
     indexed = _unique(rows, lambda r:r['contrast'], dict(CONTRASTS), 'split contrast')
     for row in indexed.values():
-        denominators = (('conditions',48), ('datasets',4320)) if current else (
-            ('difference_pp_conditions',48), ('difference_pp_expected_conditions',48),
-            ('difference_pp_paired_datasets',4320))
-        for key, expected in denominators:
+        _require(row.get('selected_fraction') == '1/3',
+                 'Split contrast requires selected fraction 1/3')
+        for key, expected in (('conditions',48), ('datasets',4320)):
             _denominator(row, key, expected, partial)
         _interval(row, 'difference_pp', '_analytic_Normal95_lower', '_analytic_Normal95_upper')
     return indexed
@@ -470,8 +463,7 @@ def plot(study, workspace, output_dir=None, *, allow_partial=False):
     workspace = Path(workspace).resolve()
     studies = STUDIES if study == 'all' else (study,)
     def study_root(name):
-        current = workspace/'relevance'
-        return current if name == 'split' and current.exists() else workspace/name
+        return workspace/('relevance' if name == 'split' else name)
     loaded = {name:_LOADERS[name](study_root(name),allow_partial) for name in studies}
     try:
         # Respect an explicit caller setting.  Otherwise keep font/config caches

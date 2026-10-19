@@ -13,7 +13,6 @@ from experiments.jmlr_verified_adaptive_v1_roots import RootPolicy, RootVerifier
 from experiments.jmlr_verified_pipeline_v1_arithmetic import cell_certificate
 from experiments.jmlr_verified_pipeline_v1_core import counts, exact_order, select_families
 from experiments.jmlr_release_capacity_v1_search import candidate_cells, capacity_search
-from experiments.jmlr_release_capacity_v1_interface import export_release, analyze_release
 from experiments.jmlr_split_ablation_v1_core import _cell_lower, _relevant_unknown, _safe_selection
 from experiments.jmlr_inference_extensions_v1 import (
     analyze_release as _analyze_outcome_release,
@@ -146,25 +145,6 @@ class SCAResult:
             sensitivity_ceiling=rational(sensitivity_ceiling),
             decimal_precision=decimal_precision, reporting_capacity=capacity)
         return artifact
-
-    def release(self, N, T, successes, *, raw_budget='2', aggregate_budget='3',
-                reporting_capacity=None):
-        """Export anonymous aggregate counts/bounds for an independent cohort.
-
-        Coverage assumes independent calibration and outcome samples with the
-        same population assignment law P(S, A): both state masses and treatment
-        propensities. Observed counts need not match. Sharing only P(A | S) is
-        insufficient: changed state masses can change aggregate propensities.
-
-        The standard outcome interface requires calibration error1/40 and
-        reserves1/80 each for raw/aggregate outcome families. Every selected
-        group is retained, including groups with no treated observations.
-        """
-        self._reporting_capacity(reporting_capacity)
-        if not self.admissible(raw_budget=raw_budget, aggregate_budget=aggregate_budget):
-            raise ValueError('selected result exceeds its capacity or sensitivity ceiling')
-        return export_release(self._region, self.partition, self._records,
-                              N, T, successes, G=rational(raw_budget))
 
 
 class SCA:
