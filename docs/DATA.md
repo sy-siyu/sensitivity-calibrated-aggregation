@@ -6,7 +6,7 @@ Run `python -m sca_reproduction prepare-data --directory data` from the checkout
 2bdc8b94fdf2f669b1d3d49325fd9359d88418566545003867841312a1653411
 ```
 
-The command verifies this checksum, 747 rows and 30 columns. If the public URL changes, obtain the same bytes from the upstream source and place them at `data/ihdp_npci_1.csv`; do not accept a changed checksum as an equivalent exact reproduction. Downloads remain untracked. No upstream source code or data is vendored.
+The command verifies this checksum, 747 rows and 30 columns. For offline setup, place the matching file at `data/ihdp_npci_1.csv`. Downloads remain untracked.
 
 The [CEVAE loader](https://github.com/AMLab-Amsterdam/CEVAE/blob/master/datasets.py) defines the first five columns as treatment and outcome quantities, with covariates beginning at zero-based column 5. The [NPCI variable definitions](https://github.com/vdorie/npci/blob/master/examples/ihdp_sim/data.R) give the covariate order: birth weight (`bw`), head circumference, preterm, birth order, neonatal health, maternal age (`momage`), infant sex, and others. The benchmark uses only CSV columns 5, 10 and 11, interpreted in this order. It uses the supplied covariate coordinates; it does not reinterpret standardized coordinates as physical units. Original treatment and outcome columns are ignored.
 

@@ -2,7 +2,7 @@
 
 Code for **sensitivity-calibrated aggregation (SCA)**. SCA selects an outcome-blind grouping of a declared finite state space and certifies the resulting sensitivity distortion. Its principal workflow uses the **full assignment calibration sample**, a **Coupled Clopper–Pearson (CP)** distortion certificate, and complete search within a combined family of two fixed-tree pruning families and estimated-propensity contiguous partitions.
 
-Coupled CP is the certificate construction inside SCA. It is not a second proposed method. The repository also implements baselines and component ablations needed to reproduce the paper. This is research code for the paper; no journal acceptance is claimed.
+Baselines and component ablations are available through the experiment runners.
 
 ## Install
 
@@ -17,7 +17,7 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
-The numerical dependencies are pinned: NumPy, SciPy and python-flint (FLINT/Arb interval arithmetic). Main-paper plotting is optional: install it with `python -m pip install -e '.[plots]'`; the numerical pins remain unchanged.
+The numerical dependencies are pinned: NumPy, SciPy and python-flint (FLINT/Arb interval arithmetic). Main-paper plotting is optional: install it with `python -m pip install -e '.[plots]'`.
 
 ## Use SCA
 
@@ -33,7 +33,7 @@ print(fit.partition, fit.certificate, fit.status)
 print(fit.optimization_completed)
 ```
 
-This uses every supplied assignment count. Population propensities, population masses, outcomes, and pilot proposals are not inputs. The default calibration error is `1/40`, compatible with the outcome allocation below. For an assignment-only analysis, `SCA(alpha="1/20")` changes the specified calibration error, not the method.
+The default calibration error is `1/40`, compatible with the outcome allocation below. Set `alpha` explicitly for another allocation, for example `SCA(alpha="1/20")` for assignment-only analysis.
 
 Run the short synthetic example, including an independent binary-outcome cohort and aggregate-only analysis:
 
@@ -48,17 +48,17 @@ SCA supports two **different operating objectives** over the same realized combi
 | Fixed-cap count minimization | `SCA().fit(N, T, cap="3/2")` | Minimize \(|\pi|\) subject to \(U_n^v(\pi)\le c\). |
 | Fixed-capacity certificate minimization | `SCA().fit(N, T, capacity=2)` | Minimize \(U_n^v(\pi)\) subject to \(|\pi|\le B\). |
 
-They can return different partitions. A partition belongs to one constituent family; tree branches are never mixed across families. Complete search means optimization within this stated family, not all partitions. Inherited local recurrence ties are deterministic; no global secondary optimum among all minimum-count partitions is asserted.
+They can return different partitions. A partition belongs to one constituent family; tree branches are never mixed across families. Complete search means optimization within this stated family, not all partitions. Ties use deterministic local recurrence rules.
 
-Check the returned status and completion metadata. A completed infinite envelope is different from unresolved numerical work. Threshold rejection bounds are not completed upper certificates. Safe identity fallback does not prove count optimality, and identity is unavailable as a capacity fallback when `B < K`. At fixed capacity, `fit.admissible(raw_budget="2", aggregate_budget="3")` additionally checks the completed certificate and count against the release constraint. These budgets are experimental choices, not a privacy guarantee or an institutional reporting rule.
+Check the returned status and completion metadata. A completed infinite envelope is different from unresolved numerical work. Threshold rejection bounds are not completed upper certificates. Safe identity fallback does not prove count optimality, and identity is unavailable as a capacity fallback when `B < K`. At fixed capacity, `fit.admissible(raw_budget="2", aggregate_budget="3")` additionally checks the completed certificate and count against the release constraint. Choose the raw sensitivity budget and aggregate ceiling before examining outcomes.
 
-An independent binary-outcome cohort can be exported using `fit.release(out_N, out_T, treated_successes)`. `sca.analyze_release(artifact)` uses only anonymous aggregate counts, projected bounds, completed cell distortions and confidence metadata. Every selected group is included, including empty treated groups. The standard allocation is calibration `1/40`, raw outcomes `1/80`, aggregate outcomes `1/80`. Assignment validity holds simultaneously across candidate partitions/capacities on its common event. Outcome guarantees retain their pointwise scope for a prespecified capacity, profile and cohort size; admission does not imply nominal conditional coverage. The analyst cannot reconstruct the provider's detailed raw-data certification evidence from this release.
+An independent binary-outcome cohort can be exported using `fit.release(out_N, out_T, treated_successes)`. `sca.analyze_release(artifact)` uses only anonymous aggregate counts, projected bounds, completed cell distortions and confidence metadata. Every selected group is included, including empty treated groups. The standard allocation is calibration `1/40`, raw outcomes `1/80`, aggregate outcomes `1/80`. Assignment validity holds simultaneously across candidate partitions/capacities on its common event. Outcome guarantees retain their pointwise scope for a prespecified capacity, profile and cohort size; admission does not imply nominal conditional coverage.
 
-The calibration and outcome cohorts must be independent samples sharing the same population assignment law \(P_{S,A}\), including both state frequencies and conditional treatment probabilities. Their observed counts need not match. Sharing only \(P(A\mid S)\) is insufficient because changes in state frequencies can change aggregate propensities. This is an assumption supporting the coverage guarantee, not a check of equality between observed counts.
+The calibration and outcome cohorts must be independent samples sharing the same population assignment law \(P_{S,A}\), including both state frequencies and conditional treatment probabilities. Their observed counts need not match. Sharing only \(P(A\mid S)\) is insufficient because changes in state frequencies can change aggregate propensities.
 
 ## Reproduce the experiments
 
-No saved results or private archives are distributed or required. The runners generate counts, splits, pilot proposals, confidence regions, certificates and outcome cohorts from source. Newly generated inputs and evidence are written to an ignored workspace. Full reproduction recomputes prerequisites rather than importing published answers.
+The runners generate counts, splits, pilot proposals, confidence regions, certificates and outcome cohorts in an ignored output workspace.
 
 First prepare the public covariates needed for the capacity and precision studies:
 
@@ -75,7 +75,7 @@ python -m unittest discover -s tests -v
 python -m sca_reproduction smoke --workspace outputs/smoke
 ```
 
-`configs/smoke.json` explicitly reduces support/replication counts or selects bounded prefixes. Its results are execution diagnostics, not the full paper panel. `configs/paper.json` uses the original retained study configurations without those changes.
+`configs/smoke.json` runs a small execution check. Use `configs/paper.json` for the full experimental panels.
 
 | Paper experiment / purpose | Configuration | Full run command (after prerequisites) |
 |---|---|---|
@@ -95,7 +95,7 @@ python -m sca_reproduction run all --workspace outputs/paper
 python -m sca_reproduction report all --workspace outputs/paper
 ```
 
-For a single study, use `report STUDY` with the same workspace. Full reporters check complete panel sizes; explicitly bounded runs use partial diagnostics. Outputs include generated input/protocol files, per-dataset records, `tables/*.csv`, and JSON summaries. No generated outputs belong in Git.
+For a single study, use `report STUDY` with the same workspace. Full reporters require complete panels; bounded runs produce partial diagnostics. Outputs include input/protocol files, per-dataset records, `tables/*.csv`, and JSON summaries.
 
 The [paper-to-code map](docs/PAPER_RESULTS.md) identifies the current three main tables and five main figures by number and stable LaTeX label. After the required complete reports exist, generate them with:
 
@@ -105,11 +105,9 @@ python -m sca_reproduction paper-tables --workspace outputs/paper
 python -m sca_reproduction plot all --workspace outputs/paper
 ```
 
-The commands read the public runners' reported outputs and write ignored `paper_tables/` and `paper_figures/` directories inside the workspace. Plot one study with `plot efficiency`, `plot split`, `plot release`, `plot precision`, or `plot computation`. They do not launch experiments; incomplete panels are not treated as paper results. See the map for the tagged paper version and the scope of historical-agreement checks versus fresh regeneration.
+The commands read completed reports and write `paper_tables/` and `paper_figures/` inside the workspace. Plot one study with `plot efficiency`, `plot split`, `plot release`, `plot precision`, or `plot computation`.
 
-See [reproduction details](docs/REPRODUCTION.md) for seed schedules, full panel sizes, restart behavior, numerical policies, cost limits and exact-regeneration scope. Full studies can take many CPU-hours and produce substantial exact-number evidence; they were **not rerun for this code release**. A smoke check establishes execution, not the paper's statistical conclusions.
-
-Release validation used a fresh checkout and clean Python environment with the original research directory denied by the operating-system sandbox: 39 focused tests, a fresh checksum-verified download, the principal SCA example, and all eight bounded experiment paths passed. The checks include separate-process aggregate-only reconstruction and exact replay. They generated numerical tables locally; those outputs are excluded from the release and its Git history.
+See [reproduction details](docs/REPRODUCTION.md) for seed schedules, panel sizes, restart behavior, numerical settings, resource requirements and validation scope.
 
 ## Baselines, ablations and references
 
@@ -121,10 +119,10 @@ Release validation used a fresh checkout and clean Python environment with the o
 | Outcome references | Raw stratification and pooled raw, which retain stronger raw-state information. Pooled raw can reuse aggregation/pooling and is not an aggregate-only competitor. |
 | Oracle diagnostics | Same-realized-family choices using true population distortion/counts. Truth is evaluated after operational selection and never enters SCA certification or selection. |
 
-The public default has no switch to these comparisons. They live in experiment configurations and runners. Legacy internal module names and raw record IDs are retained to preserve numerical provenance; display labels and [the procedure mapping](docs/REPRODUCTION.md) explain their roles.
+Baselines and ablations are configured through the experiment runners. The [procedure mapping](docs/REPRODUCTION.md#procedure-definitions) connects their output identifiers to the paper labels.
 
 ## Repository scope and attribution
 
-`sca/` is the small public interface. `experiments/` holds the shared verified arithmetic and retained experiment kernels; `sca_reproduction/` regenerates their input dependencies and orchestrates fresh runs. `configs/`, `tests/`, `examples/` and `docs/` complete the release. No neural-training or unrelated release machinery is included.
+`sca/` provides the public interface, `experiments/` implements the numerical routines and experiments, and `sca_reproduction/` manages data generation, execution and reporting. Configurations, tests, examples and documentation are in the corresponding directories.
 
-This repository contains code, configurations, tests and instructions only: no saved experimental evidence, generated tables/figures, manuscript, or original repository history. The project is licensed under the [MIT License](LICENSE); see [licensing details](LICENSING.md) and [third-party attribution](THIRD_PARTY_NOTICES.md). Dependencies and downloaded data retain their own terms.
+Generated data, results and figures remain outside version control. The project is licensed under the [MIT License](LICENSE); see [licensing details](LICENSING.md) and [third-party attribution](THIRD_PARTY_NOTICES.md).

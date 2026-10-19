@@ -1,6 +1,6 @@
 # Attribution and external dependencies
 
-The verified calibration, mixture optimization, search recurrences, split comparisons and outcome routines are curated from the authors' research implementation for *Sensitivity Calibration Under State Aggregation*. This release keeps their numerical kernels and legacy module identifiers. It adds a public SCA interface and regenerates inputs from source; it does not include the parent repository's history or unrelated training implementations.
+This repository contains the authors' implementation of SCA and the experiments for *Sensitivity Calibration Under State Aggregation*.
 
 Installed dependencies retain their own notices and terms:
 
