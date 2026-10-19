@@ -213,8 +213,19 @@ class PaperRendering(unittest.TestCase):
                     rightmost = [text for ax in fig.axes for text in ax.texts
                                  if text.xy[0]==max(t.xy[0] for t in ax.texts)]
                     self.assertEqual(len(rightmost),6)
-                    self.assertTrue(all(text.get_ha()=='right' for text in rightmost))
+                    self.assertTrue(all(text.get_ha()=='center' for text in annotations))
+                    self.assertTrue(all(text.get_position()[0]==-6 for text in rightmost))
                     self.assertTrue(all('100/100' in text.get_text() for text in rightmost))
+                    for ax in fig.axes:
+                        for prefix in ('SCA ','B '):
+                            row = sorted((text for text in ax.texts
+                                          if text.get_text().startswith(prefix)),
+                                         key=lambda text:text.xy[0])
+                            self.assertEqual(len(row),5)
+                            bounds = [text.get_window_extent(renderer) for text in row]
+                            for left,right in zip(bounds,bounds[1:]):
+                                self.assertLessEqual(left.x1,right.x0,
+                                    f'Adjacent {prefix.strip()} admission labels overlap')
                     fig.savefig(workspace/'release_annotations.png',dpi=200)
                 finally:
                     plt.close(fig)

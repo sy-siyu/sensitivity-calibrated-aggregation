@@ -344,9 +344,9 @@ def _draw_release(plt, indexed):
                 admitted = round(_number(row,'admitted_mean')*_integer(row,'n'))
                 ax.annotate(f"{short} {admitted}/{_integer(row,'n')}",
                     xy=(_integer(row,'B'),1),xycoords=('data','axes fraction'),
-                    xytext=(0,14 if short=='SCA' else 3),textcoords='offset points',
-                    color=color,ha='right' if _integer(row,'B')==x[-1] else 'center',
-                    va='bottom',annotation_clip=False)
+                    xytext=(-6 if _integer(row,'B')==x[-1] else 0,
+                            14 if short=='SCA' else 3),textcoords='offset points',
+                    color=color,ha='center',va='bottom',annotation_clip=False)
             if method == 'verified_capacity':
                 ax.plot(x,[_number(r,'oracle_distortion_mean') for r in rows],':',color='black',
                     marker='x',markersize=4,label='Same-family population oracle')

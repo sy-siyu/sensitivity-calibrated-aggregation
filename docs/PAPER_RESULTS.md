@@ -1,6 +1,6 @@
 # Paper results and reproduction map
 
-This map targets **Sensitivity Calibration Under State Aggregation**, the 49-page PDF created and modified **2026-10-19 10:23:18 AEDT** (pdfTeX 1.40.29). Its SHA-256 is `8024b6083b10bb6401325d0292bbc89a3d4b10e029bc18f8ea2d50473a70ea91`. The numbering below was checked against that PDF and the active `main.tex` experiment inputs. The manuscript/PDF are not distributed in this code repository. The corresponding code release is `paper-reproduction-2026-10-19`.
+This map targets **Sensitivity Calibration Under State Aggregation**, the 49-page PDF created and modified **2026-10-19 11:01:43 AEDT** (pdfTeX 1.40.29). Its SHA-256 is `01bea7dbd6c5e0269af123d9b3708ba770168d706e21337bfffbcaaf990c5d11`. The numbering below was checked against that PDF and the active `main.tex` experiment inputs. The manuscript/PDF are not distributed in this code repository. The corresponding code release is `paper-reproduction-2026-10-19`.
 
 SCA means full-sample Coupled CP certification and complete search within the combined two-tree/estimated-order family. Certificate constructions and restricted searches are ablations; population oracles are diagnostics. Fixed-cap count minimization and fixed-capacity certificate minimization are distinct objectives, even though their completed feasibility decisions agree at matching budgets.
 
@@ -9,6 +9,7 @@ SCA means full-sample Coupled CP certification and complete search within the co
 From the installed public checkout, use a fresh workspace. These commands regenerate inputs and numerical evidence; they do not import published answers:
 
 ```sh
+git checkout paper-reproduction-2026-10-19
 python -m pip install -e '.[plots]'
 python -m sca_reproduction prepare-data --directory data
 for study in assignment release recovery efficiency split precision computation; do
@@ -100,4 +101,4 @@ Output: `paper_figures/computational_cost.{pdf,png}`. Inputs: `computation/table
 
 ## Verification status
 
-Paper numbering, labels, filters and the PDF identifier were checked against the active manuscript. The unchanged numerical implementation retains the earlier release's 39-test validation. This update passed 21 targeted plotting/table/CLI tests. Temporary historical-table checks reproduced the three tables' means and relevant intervals, all five figures' coordinates, all 30 admission counts, all 144 recovery conditions (300 paths each), and exact accounting/nesting for Table 3's 200 profile-block records. Imported split completions retain their original status labels. Rightmost admission labels are kept inside the figure canvas. These establish execution and agreement with historical records, **not fresh regeneration of complete reported results**; no calibration, selection, outcome inference or timing experiment was rerun. A clean-checkout check of the new helpers is pending before publication. No unresolved numerical discrepancy currently requires a research rerun.
+Paper numbering, labels, filters and the PDF identifier were checked against the active manuscript. The unchanged numerical implementation retains the earlier release's 39-test validation. This update passed 21 targeted plotting/table/CLI tests and both new commands in a clean checkout with OS access to the research tree denied. Temporary historical-table checks reproduced the three tables' means and relevant intervals, all five figures' coordinates, all 30 admission counts, all 144 recovery conditions (300 paths each), and exact accounting/nesting for Table 3's 200 profile-block records. Imported split completions retain their original status labels. Rightmost admission labels are kept inside the figure canvas. These establish execution and agreement with historical records, **not fresh regeneration of complete reported results**; no calibration, selection, outcome inference or timing experiment was rerun. No unresolved numerical discrepancy currently requires a research rerun.
