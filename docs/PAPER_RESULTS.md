@@ -32,9 +32,9 @@ Exact rational evidence remains in generated JSON artifacts. Publication tables 
 
 ### Table 3 interpretation
 
-The assignment rows use unknown masses, cap `3/2`, all 48 conditions and 100 replications per condition (4,800 datasets). Compression is `100*(K-count)/K`; coupling gain is the paired `100*(count_independent-count_coupled)/K`; oracle gap is `100*(count-oracle_count)/K` in the same realized family. Do not treat the raw assignment `oracle_gap` count as already normalized.
+The assignment rows use unknown masses, cap `3/2`, all 48 conditions and 100 replications per condition (4,800 datasets). Achieved compression is `100*(K-count)/K`; oracle compression is `100*(K-oracle_count)/K`; coupling gain is the paired `100*(count_independent-count_coupled)/K`; and oracle gap is `100*(count-oracle_count)/K`. Each compression is normalized by that dataset's support size before the existing equal-condition average is taken, so counts from different `K` values are never pooled first. Do not treat the raw assignment `oracle_gap` count as already normalized.
 
-The Allocation control and Fixed-group pooled rows keep observations, realized families, order, and cap fixed. Their uncertainty comes from the efficiency reporter’s replication-index condition averages. Population truth is diagnostic and never enters operational selection.
+The oracle uses the true assignment law within the same realized candidate family, retaining the sample's estimated order for Contiguous and Combined. The Allocation control and Fixed-group pooled rows keep observations, realized families, order, and cap fixed. Their uncertainty comes from the efficiency reporter's replication-index condition averages. Recoveries always refer to the oracle count for the row's own family; the zero recoveries across all three confidence constructions refer specifically to the Combined family. Population truth is diagnostic and never enters operational selection.
 
 ### Table 4 interpretation
 
@@ -76,7 +76,7 @@ Label: `fig:release-capacity`. Generate with:
 python -m sca_reproduction plot release --workspace outputs/paper
 ```
 
-Output: `paper_figures/release_capacity.{pdf,png}`. Inputs are `release/tables/calibration_summary.csv`, all three laws, all five capacities, and 100 independent blocks per law. It plots **SCA and the equal-mass baseline only**, with their completed certificate, true selected distortion, same-family SCA population oracle, and admission counts. The threshold is `Lambda_max/G = 1.5`.
+Output: `paper_figures/release_capacity.{pdf,png}`. Inputs are `release/tables/calibration_summary.csv`, all three laws, all five capacities, and 100 independent blocks per law. It plots **SCA and the equal-mass baseline only**, with their completed certificate, true selected distortion, same-family SCA population oracle, and admission counts. Equal-mass admission annotations use **EM**; `B` remains the reporting-capacity variable. The panels are Balanced law, Weak-overlap law, and IHDP reference population. The threshold is `Lambda_max/G = 1.5`.
 
 The stronger globally optimized propensity-logit clustering baseline is not a curve in Figure 4. Its admission comparisons appear in manuscript prose and come from `relevance/tables/clustering_exact.json` / `clustering_capacity_cases.csv`. In particular, balanced `B=8` admissions are SCA 100, clustering 70, equal-mass 62 out of 100; IHDP `B=4` admissions are 75, 25, and 7.
 
@@ -88,7 +88,9 @@ Label: `fig:precision-operating-curves`. Generate with:
 python -m sca_reproduction plot precision --workspace outputs/paper
 ```
 
-Output: `paper_figures/precision_operating_curves.{pdf,png}`. Compression uses all laws and five caps from `precision/tables/assignment_summary.csv`. Width panels use the manuscript’s selected law/profile/method/cohort combinations from `method_width_target_summary.csv`. Every point uses all 100 blocks without admission filtering; repeated caps, profiles, prefixes, and methods do not enlarge the independent denominator.
+Output: `paper_figures/precision_operating_curves.{pdf,png}` plus `precision_operating_curves_coordinates.csv`. Compression uses all three laws and five caps from `precision/tables/assignment_summary.csv`. The three width panels display Cellwise aggregate (`z_cellwise`), Raw stratification (`raw_stratified`), and Pooled raw (`raw_pooled`) at both `m/K=16` and `256`, using the selected Balanced/aligned, Weak-overlap/aligned, and IHDP/high-heterogeneity rows from `method_width_target_summary.csv`. Solid filled markers denote `m/K=16`; dashed hollow markers denote `m/K=256`.
+
+Every displayed mean and pointwise normal 95% Monte Carlo interval comes from its saved report row and uses all 100 blocks for that law without admission filtering. The coordinate receipt therefore has 15 compression points and 90 width points. Saved `z_global` results and target-width analyses remain available to other reports, but the global curves and the 0.20 target reference are not displayed in Figure 5. Repeated caps, profiles, prefixes, and methods do not enlarge the independent denominator.
 
 ## Text and theorem results
 

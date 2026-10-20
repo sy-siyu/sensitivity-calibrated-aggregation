@@ -81,14 +81,18 @@ def fixture(workspace, full=False):
                  **metric('compression_pp',50,count)) for law in range(3) for cap in plots.CAPS]
     write_rows(workspace/'precision/tables/assignment_summary.csv',rows)
     rows = []
+    width_bases = {'z_global':.21,'z_cellwise':.31,
+                   'raw_stratified':.41,'raw_pooled':.51}
     for law, profiles in ((0,('constant','aligned','alternating')),
         (1,('constant','aligned','alternating')),(2,('low_heterogeneity','high_heterogeneity'))):
         for profile in profiles:
             for ratio in (16,256):
                 for method in ('z_global','z_cellwise','raw_stratified','raw_pooled'):
-                    for cap in plots.CAPS:
+                    for cap_index,cap in enumerate(plots.CAPS):
+                        width = width_bases[method]+(.08 if ratio==256 else 0)+.01*law+.002*cap_index
                         rows.append(dict(law_index=law,profile=profile,m_ratio=ratio,method=method,
-                            cap=str(cap),n_blocks=count,**metric('width',.4,count),
+                            cap=str(cap),n_blocks=count,
+                            **metric('width',width,count,lo=width-.03,hi=width+.04),
                             admitted_width_mean=.01))
     write_rows(workspace/'precision/tables/method_width_target_summary.csv',rows)
     for table,supports,n in (('primary_overview',(16,32,64,128,256),20),
@@ -172,7 +176,7 @@ class PaperRendering(unittest.TestCase):
             result = plots.plot('all',workspace,allow_partial=True)
             self.assertTrue(result['partial_fixture'])
             self.assertEqual(set(result['figures']),set(plots.STUDIES))
-            for study,n in (('efficiency',38),('split',7),('release',75),('precision',75),('computation',16)):
+            for study,n in (('efficiency',38),('split',7),('release',75),('precision',105),('computation',16)):
                 record = result['figures'][study]
                 self.assertEqual(record['points'],n)
                 self.assertTrue(Path(record['pdf']).read_bytes().startswith(b'%PDF'))
@@ -187,7 +191,21 @@ class PaperRendering(unittest.TestCase):
             self.assertTrue(all(float(r['lower'])==.17 and float(r['upper'])==.68
                                 for r in recovery))
             precision = plots._rows(Path(result['figures']['precision']['coordinates']))
-            self.assertTrue(all(float(r['mean'])==.4 for r in precision if r['panel']=='confidence_width'))
+            compression = [r for r in precision if r['panel']=='compression']
+            widths = [r for r in precision if r['panel']=='confidence_width']
+            self.assertEqual(len(compression),15)
+            self.assertEqual(len(widths),90)
+            self.assertEqual({r['method'] for r in widths},
+                             {'z_cellwise','raw_stratified','raw_pooled'})
+            self.assertEqual({r['m_ratio'] for r in widths},{'16','256'})
+            saved = {(r['law_index'],r['profile'],r['m_ratio'],r['method'],r['cap']):r
+                     for r in plots._rows(workspace/'precision/tables/method_width_target_summary.csv')}
+            for row in widths:
+                source = saved[row['law_index'],row['profile'],row['m_ratio'],row['method'],row['x']]
+                self.assertEqual(float(row['mean']),float(source['width_mean']))
+                self.assertEqual(float(row['lower']),float(source['width_ci95_lower']))
+                self.assertEqual(float(row['upper']),float(source['width_ci95_upper']))
+                self.assertEqual(row['source_mean'],'width_mean')
             computation = plots._rows(Path(result['figures']['computation']['coordinates']))
             self.assertEqual(float(computation[0]['mean']),2)
             self.assertTrue(all(r['source_mean']=='total_seconds_median' for r in computation))
@@ -215,12 +233,15 @@ class PaperRendering(unittest.TestCase):
                     renderer = fig.canvas.get_renderer()
                     annotations = [text for ax in fig.axes for text in ax.texts]
                     self.assertEqual(len(annotations),30)
+                    self.assertEqual([ax.get_title() for ax in fig.axes],
+                        ['Balanced law','Weak-overlap law','IHDP reference population'])
                     for text in annotations:
                         bounds = text.get_window_extent(renderer)
                         self.assertGreaterEqual(bounds.x0,fig.bbox.x0)
                         self.assertLessEqual(bounds.x1,fig.bbox.x1)
                         self.assertGreaterEqual(bounds.y0,fig.bbox.y0)
                         self.assertLessEqual(bounds.y1,fig.bbox.y1)
+                        self.assertFalse(text.get_annotation_clip())
                     rightmost = [text for ax in fig.axes for text in ax.texts
                                  if text.xy[0]==max(t.xy[0] for t in ax.texts)]
                     self.assertEqual(len(rightmost),6)
@@ -228,7 +249,8 @@ class PaperRendering(unittest.TestCase):
                     self.assertTrue(all(text.get_position()[0]==-6 for text in rightmost))
                     self.assertTrue(all('100/100' in text.get_text() for text in rightmost))
                     for ax in fig.axes:
-                        for prefix in ('SCA ','B '):
+                        self.assertFalse(any(text.get_text().startswith('B ') for text in ax.texts))
+                        for prefix in ('SCA ','EM '):
                             row = sorted((text for text in ax.texts
                                           if text.get_text().startswith(prefix)),
                                          key=lambda text:text.xy[0])
@@ -240,6 +262,35 @@ class PaperRendering(unittest.TestCase):
                     fig.savefig(workspace/'release_annotations.png',dpi=200)
                 finally:
                     plt.close(fig)
+
+    def test_precision_display_uses_cellwise_and_raw_methods_at_both_cohort_sizes(self):
+        import matplotlib
+        matplotlib.use('Agg')
+        from matplotlib import pyplot as plt
+        with tempfile.TemporaryDirectory(prefix='sca-paper-fixture-') as directory:
+            workspace = Path(directory); fixture(workspace,full=True)
+            data = plots._load_precision(workspace/'precision',False)
+            self.assertTrue(any(key[3]=='z_global' for key in data[1]))
+            fig,receipt = plots._draw_precision(plt,data)
+            try:
+                widths = [row for row in receipt if row['panel']=='confidence_width']
+                self.assertEqual(len(widths),90)
+                self.assertFalse(any(row['method']=='z_global' for row in widths))
+                for ax in fig.axes[1:]:
+                    self.assertEqual(len(ax.containers),6)
+                    self.assertFalse(any(len(list(line.get_ydata()))==2 and
+                        all(abs(float(y)-.2)<1e-12 for y in line.get_ydata())
+                        for line in ax.lines))
+                    for i,container in enumerate(ax.containers):
+                        line = container.lines[0]
+                        self.assertEqual(line.get_linestyle(),'-' if i%2==0 else '--')
+                        self.assertEqual(line.get_markerfacecolor(),
+                                         line.get_color() if i%2==0 else 'white')
+                labels = [text.get_text() for text in fig.legends[-1].get_texts()]
+                self.assertEqual(set(labels),{'Cellwise aggregate','Raw stratification','Pooled raw',
+                                              '$m/K=16$','$m/K=256$'})
+            finally:
+                plt.close(fig)
 
     def test_partial_watermark_is_explicit_on_each_figure(self):
         from unittest.mock import patch

@@ -325,12 +325,12 @@ def _draw_release(plt, indexed):
     fig, axes = plt.subplots(3,1,figsize=(6,7))
     fig.subplots_adjust(left=.15,right=.97,bottom=.16,top=.90,hspace=1.05)
     receipt = []
-    for law,(ax,title) in enumerate(zip(axes,('Balanced controlled law','Skewed controlled law',
+    for law,(ax,title) in enumerate(zip(axes,('Balanced law','Weak-overlap law',
                                                'IHDP reference population'))):
         ax.set_title(title,pad=38)
         for method,color,short,label in (
             ('verified_capacity','#1976b5','SCA','SCA'),
-            ('equal_calibration_mass','#cc650c','B','Equal-mass baseline')):
+            ('equal_calibration_mass','#cc650c','EM','Equal-mass baseline')):
             rows = [r for (i,method_key,B),r in indexed.items() if i==law and method_key==method]
             rows.sort(key=lambda r:_integer(r,'B'))
             x = [_integer(r,'B') for r in rows]
@@ -370,13 +370,14 @@ def _draw_release(plt, indexed):
 
 
 def _draw_precision(plt, data):
+    from matplotlib.lines import Line2D
     assignment, methods = data
     fig, axes = plt.subplots(2,2,figsize=(6,5.1))
-    fig.subplots_adjust(left=.10,right=.985,top=.89,bottom=.20,hspace=.49,wspace=.30)
+    fig.subplots_adjust(left=.105,right=.985,top=.89,bottom=.205,hspace=.50,wspace=.31)
     receipt = []
     ax = axes[0,0]
-    for law,label,color,marker in ((0,'Balanced','#2478b5','o'),
-        (1,'Weak overlap','#d27622','s'),(2,'IHDP reference','#37864b','^')):
+    for law,label,color,marker in ((0,'Balanced law','#2478b5','o'),
+        (1,'Weak-overlap law','#d27622','s'),(2,'IHDP reference','#37864b','^')):
         rows = [assignment[law,cap] for cap in CAPS]
         _errors(ax,rows,'cap','compression_pp',color=color,marker=marker,
                 markersize=3,capsize=1.5,linewidth=1.1,label=label)
@@ -386,29 +387,44 @@ def _draw_precision(plt, data):
     handles,labels = ax.get_legend_handles_labels()
     fig.legend(handles,labels,loc='upper center',bbox_to_anchor=(.51,1.005),ncol=3,
                frameon=False,columnspacing=1.4,handlelength=1.5)
+    method_styles = (
+        ('z_cellwise','#2478b5','o','Cellwise aggregate'),
+        ('raw_stratified','#555555','s','Raw stratification'),
+        ('raw_pooled','#8d5da6','D','Pooled raw'),
+    )
+    cohort_styles = ((16,'-','full',3.4),(256,'--','none',3.7))
     for ax,law,profile,title in ((axes[0,1],0,'aligned','(b) Balanced / aligned'),
-        (axes[1,0],1,'aligned','(c) Weak overlap / aligned'),
+        (axes[1,0],1,'aligned','(c) Weak-overlap law / aligned'),
         (axes[1,1],2,'high_heterogeneity','(d) IHDP / high heterogeneity')):
-        for method,m,color,marker,style,label in (
-            ('z_global',16,'#2478b5','o','-','SCA + global inference, $m/K=16$'),
-            ('z_global',256,'#c04a36','^','-','SCA + global inference, $m/K=256$'),
-            ('raw_stratified',256,'#555555',None,'--','Shared raw, $m/K=256$'),
-            ('raw_pooled',256,'#8d5da6','s',':','Pooled raw, $m/K=256$')):
-            rows = [methods[law,profile,m,method,cap] for cap in CAPS]
-            _errors(ax,rows,'cap','width',color=color,marker=marker,linestyle=style,
-                markersize=3,capsize=1.5,linewidth=1.1,label=label)
-            receipt += _coordinates(rows,panel='confidence_width',xkey='cap',metric='width',
-                law_index=law,profile=profile,m_ratio=m,method=method)
-        ax.axhline(.2,color='#999999',linewidth=.8,linestyle=(0,(1,2)))
+        for method,color,marker,label in reversed(method_styles):
+            for m,style,fill,markersize in cohort_styles:
+                rows = [methods[law,profile,m,method,cap] for cap in CAPS]
+                _errors(ax,rows,'cap','width',color=color,marker=marker,linestyle=style,
+                    markerfacecolor=(color if fill=='full' else 'white'),markeredgecolor=color,
+                    markersize=markersize,capsize=1.6,linewidth=1.15,
+                    zorder=(4 if method=='z_cellwise' else 3 if method=='raw_stratified' else 2))
+                receipt += _coordinates(rows,panel='confidence_width',xkey='cap',metric='width',
+                    law_index=law,profile=profile,m_ratio=m,method=method)
         ax.set_title(title,loc='left')
         ax.set(ylabel='Confidence width',ylim=(.15,.93),yticks=[.2,.4,.6,.8])
     for ax in axes.flat:
         ax.set(xlabel='Distortion cap $c$',xlim=(.97,2.03))
         ax.set_xticks([float(c) for c in CAPS],labels=['1','1.1','1.25','1.5','2'])
         ax.spines[['top','right']].set_visible(False); ax.grid(alpha=.14)
-    handles,labels = axes[0,1].get_legend_handles_labels()
-    fig.legend(handles,labels,loc='lower center',bbox_to_anchor=(.51,.015),ncol=2,
-               frameon=False,columnspacing=1.2,handlelength=2)
+    method_handles = [Line2D([0],[0],color=color,marker=marker,linewidth=1.2,
+        markersize=4,label=label) for method,color,marker,label in method_styles]
+    cohort_handles = [
+        Line2D([0],[0],color='black',marker='o',markerfacecolor='black',linewidth=1.2,
+               linestyle='-',markersize=4,label='$m/K=16$'),
+        Line2D([0],[0],color='black',marker='o',markerfacecolor='white',linewidth=1.2,
+               linestyle='--',markersize=4,label='$m/K=256$')]
+    # Matplotlib fills multirow legends down columns.  Interleave the handles
+    # so the three methods occupy the first row and cohort encodings the second.
+    legend_handles = [method_handles[0],cohort_handles[0],method_handles[1],
+                      cohort_handles[1],method_handles[2]]
+    fig.legend(handles=legend_handles,labels=[handle.get_label() for handle in legend_handles],
+        loc='lower center',bbox_to_anchor=(.51,.012),ncol=3,frameon=False,
+        columnspacing=1.15,handlelength=1.9)
     return fig, receipt
 
 
@@ -484,7 +500,11 @@ def plot(study, workspace, output_dir=None, *, allow_partial=False):
         for name in studies:
             fig = None
             try:
-                with plt.rc_context({'axes.titlesize':9.3 if name=='efficiency' else 10}):
+                figure_style = ({'font.size':10.1,'axes.labelsize':10.1,'axes.titlesize':10.5,
+                    'xtick.labelsize':10.1,'ytick.labelsize':10.1,'legend.fontsize':9.8}
+                    if name == 'precision' else
+                    {'axes.titlesize':9.3 if name=='efficiency' else 10})
+                with plt.rc_context(figure_style):
                     fig, receipt = _DRAWERS[name](plt,loaded[name])
                 if allow_partial:
                     fig.text(.5,.5,'PARTIAL LAYOUT FIXTURE',ha='center',va='center',
