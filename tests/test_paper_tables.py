@@ -35,7 +35,7 @@ def assignments():
             for family, base in (('fixed', 3*K//4), ('contiguous', 5*K//8), ('combined', 9*K//16)):
                 for method in ('coupled', 'independent'):
                     count = base+rep+(2 if method == 'independent' else 0)
-                    oracle = K//4
+                    oracle = (K//4 if K == 16 else K//2)+rep
                     rows.append({**m, 'mode': 'unknown_mass', 'method': method, 'family': family,
                         'cap': F(3, 2), 'count': count, 'oracle_count': oracle,
                         'compression': F(K-count, K), 'oracle_gap': count-oracle,
@@ -123,10 +123,19 @@ class PaperTableNumerics(unittest.TestCase):
         self.assertEqual(len(table), 3)
         self.assertEqual(table[0]['coupling_gain_pp_exact_mean'], F(125, 16))
         self.assertEqual(table[0]['compression_percent_exact_mean'], F(1475, 64))
+        self.assertEqual(table[0]['oracle_compression_percent_exact_mean'], F(3875, 64))
+        pooled = F(100*(sum(v['K'] for (c,r,label),v in index.items()
+                            if label==('fixed','coupled'))-
+                        sum(v['oracle'] for (c,r,label),v in index.items()
+                            if label==('fixed','coupled'))),
+                   sum(v['K'] for (c,r,label),v in index.items()
+                       if label==('fixed','coupled')))
+        self.assertNotEqual(table[0]['oracle_compression_percent_exact_mean'],pooled)
         for row in table:
             self.assertEqual(row['datasets'], 4)
             self.assertEqual(row['conditions'], 2)
             self.assertEqual(row['recoveries'], 0)
+            self.assertEqual(row['oracle_compression_percent_exact_mean'],F(3875,64))
         direct = [F(100*(v['count']-v['oracle']), v['K']) for (c, r, label), v in index.items()
                   if label == ('combined', 'coupled')]
         self.assertEqual(table[2]['oracle_gap_percent_K_exact_mean'], sum(direct)/4)
@@ -143,12 +152,23 @@ class PaperTableNumerics(unittest.TestCase):
         rows, summaries = efficiency(source)
         table, checks = paper._efficiency(rows, summaries, source, conditions=CONDITIONS, reps=range(2))
         self.assertEqual(checks['original_assignment_matches'], 4)
+        self.assertEqual(checks['combined_oracle_count_matches'], 12)
+        self.assertTrue(all(row['oracle_compression_percent_exact_mean']==F(3875,64)
+                            for row in table))
         self.assertLess(table[1]['compression_percent_mean'], table[0]['compression_percent_mean'])
         self.assertGreater(table[1]['oracle_gap_percent_K_mean'], table[0]['oracle_gap_percent_K_mean'])
+        self.assertIn('oracle_gap_percent_K_exact_mean',table[0])
         bad = deepcopy(summaries); bad[0]['n'] = 1
         with self.assertRaises(ValueError): paper._efficiency(rows, bad, source, conditions=CONDITIONS, reps=range(2))
         bad = deepcopy(rows); bad[0]['selected_certificate'] = F(7, 5)
         with self.assertRaises(ValueError): paper._efficiency(bad, summaries, source, conditions=CONDITIONS, reps=range(2))
+        bad = deepcopy(rows)
+        changed = next(row for row in bad if row['procedure']=='allocation_control')
+        changed['oracle_count'] += 1
+        changed['normalized_count_gap'] = F(changed['selected_count']-changed['oracle_count'],changed['K'])
+        changed['count_recovered'] = changed['selected_count']==changed['oracle_count']
+        with self.assertRaisesRegex(ValueError,'population-oracle count'):
+            paper._efficiency(bad, summaries, source, conditions=CONDITIONS, reps=range(2))
 
 
 

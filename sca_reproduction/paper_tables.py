@@ -113,14 +113,17 @@ def _assignment(rows, *, conditions=CONDITIONS, reps=range(100)):
         count, oracle = _int(row['count']), _int(row['oracle_count'])
         if not 1 <= count <= K or not 1 <= oracle <= K:
             raise ValueError('Invalid selected/oracle count')
-        compression, gap = F(100*(K-count), K), F(100*(count-oracle), K)
+        compression = F(100*(K-count), K)
+        oracle_compression = F(100*(K-oracle), K)
+        gap = F(100*(count-oracle), K)
         if _q(row['compression'])*100 != compression or _int(row['oracle_gap']) != count-oracle:
             raise ValueError('Assignment compression or same-family oracle gap is inconsistent')
         certificate = _q(row['certificate'])
         if not 1 <= certificate <= CAP:
             raise ValueError('Selected assignment certificate is not completed within cap')
         _put(index, (condition, rep, label), {'count': count, 'oracle': oracle, 'K': K,
-             'compression': compression, 'gap': gap, 'certificate': certificate})
+             'compression': compression, 'oracle_compression': oracle_compression,
+             'gap': gap, 'certificate': certificate})
     _complete(index, labels, reps, conditions=conditions)
     table = []
     for family, name in (('fixed', 'Fixed trees'), ('contiguous', 'Contiguous'), ('combined', 'Combined')):
@@ -134,6 +137,8 @@ def _assignment(rows, *, conditions=CONDITIONS, reps=range(100)):
         recoveries = sum(index[c, r, label]['count'] == index[c, r, label]['oracle'] for c in conditions for r in reps)
         table.append({'family': name, 'confidence_region': 'Coupled CP',
             **_prefix('compression_percent', _metric(index, label, 'compression', conditions, reps)),
+            **_prefix('oracle_compression_percent',
+                      _metric(index, label, 'oracle_compression', conditions, reps)),
             **_prefix('coupling_gain_pp', _metric(index, label, 'coupling', conditions, reps)),
             **_prefix('oracle_gap_percent_K', _metric(index, label, 'gap', conditions, reps)),
             'recoveries': recoveries, 'datasets': len(conditions)*len(reps), 'conditions': len(conditions),
@@ -152,16 +157,21 @@ def _efficiency(rows, summaries, assignment, *, conditions=CONDITIONS, reps=rang
         condition, rep, K = _case(row)
         count, oracle = _int(row['selected_count']), _int(row['oracle_count'])
         if not 1 <= count <= K or not 1 <= oracle <= K: raise ValueError('Invalid efficiency count')
-        compression, gap = F(100*(K-count), K), F(100*(count-oracle), K)
+        compression = F(100*(K-count), K)
+        oracle_compression = F(100*(K-oracle), K)
+        gap = F(100*(count-oracle), K)
         if _q(row['compression'])*100 != compression or _q(row['normalized_count_gap'])*100 != gap:
             raise ValueError('Efficiency compression or oracle gap is inconsistent')
         if _bool(row['count_recovered']) != (count == oracle):
             raise ValueError('Efficiency recovery indicator disagrees with actual threshold count')
-        value = {'count': count, 'oracle': oracle, 'compression': compression, 'gap': gap,
+        value = {'count': count, 'oracle': oracle, 'compression': compression,
+                 'oracle_compression': oracle_compression, 'gap': gap,
                  'recovered': count == oracle, 'status': row['selection_status']}
         _put(index, (condition, rep, label), value)
         source = assignment[condition, rep, ('combined', 'coupled')]
-        if label == 'original' and (count != source['count'] or oracle != source['oracle']
+        if oracle != source['oracle']:
+            raise ValueError('Combined confidence constructions change the population-oracle count')
+        if label == 'original' and (count != source['count']
                                     or _q(row['selected_certificate']) != source['certificate']):
             raise ValueError('Efficiency original does not preserve the assignment SCA selection')
     _complete(index, labels, reps, conditions=conditions)
@@ -193,8 +203,11 @@ def _efficiency(rows, summaries, assignment, *, conditions=CONDITIONS, reps=rang
                           name+'_MCSE': 100*float(saved['se']),
                           name+'_analytic_Normal95_lower': 100*float(saved['ci95_lower']),
                           name+'_analytic_Normal95_upper': 100*float(saved['ci95_upper'])})
+        entry.update(_prefix('oracle_compression_percent',
+                             _metric(index, label, 'oracle_compression', conditions, reps)))
         output.append(entry)
     return output, {'original_assignment_matches': len(conditions)*len(reps),
+                    'combined_oracle_count_matches': len(index),
                     'procedure_datasets': len(index), 'primary_cap': str(CAP)}
 
 
@@ -353,7 +366,9 @@ def generate(workspace, output_dir=None):
     manifest = {'status': 'complete', 'cap': str(CAP), 'input_tables': paths,
         'outputs': {name: len(rows) for name, rows in outputs.items()},
         'assignment': {'independent_datasets': 4800, 'fixed_conditions': 48, 'replications_per_condition': 100,
-                       'same_family_oracle': True, 'coupling_comparison': 'paired independent minus coupled count, normalized by K'},
+                       'same_family_oracle': True,
+                       'oracle_compression': 'per-dataset 100*(1-oracle_count/K), then equal-condition averaging',
+                       'coupling_comparison': 'paired independent minus coupled count, normalized by K'},
         'efficiency_checks': efficiency_checks, 'split_checks': split_checks,
         'precision_checks': precision_checks,
         'precision_scope': {'law_index': 0, 'law_id': 'K64_balanced_moderate_ordered', 'profiles': list(PROFILES),
