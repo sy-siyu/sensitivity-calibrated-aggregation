@@ -1,0 +1,42 @@
+{
+  "version": "jmlr_verified_pipeline_v1",
+  "output_dir": "outputs/paper/assignment",
+  "baseline_source_root": "outputs/paper/assignment/splits",
+  "alpha": "1/20",
+  "caps": [
+    "5/4",
+    "3/2",
+    "2"
+  ],
+  "probability_law": "first K-1 stored binary masses and exact last residual in original generator input order; relabel entire frozen law only",
+  "baseline_fraction": "1/5",
+  "scope": {
+    "large_datasets": 4800,
+    "large_mass_evaluations": 9600,
+    "large_labels": 172800,
+    "baseline_development_datasets": 480,
+    "baseline_evaluation_datasets": 4320
+  },
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 1000000
+  },
+  "dependencies": {
+    "python": "3.13.0",
+    "numpy": "2.4.3",
+    "scipy": "1.17.1",
+    "python-flint": "0.8.0",
+    "FLINT": "3.3.1"
+  },
+  "execution": {
+    "workers": 2,
+    "native_threads": 1,
+    "preflight_limit_seconds": 1800,
+    "total_compute_limit_seconds": 21600,
+    "forecast_safety_factor": 1.5
+  }
+}

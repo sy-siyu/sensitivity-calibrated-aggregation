@@ -1,0 +1,71 @@
+{
+  "version": "jmlr_certification_bottleneck_v1",
+  "output_dir": "certification",
+  "assignment_source": "assignment",
+  "historical_datasets": 4800,
+  "historical_conditions": 48,
+  "release_blocks": 300,
+  "recovery_paths": 300,
+  "caps": ["5/4", "3/2", "2"],
+  "primary_cap": "3/2",
+  "oracle_log_margins": ["0", "1/40", "1/20", "1/10", "1/5"],
+  "oracle_scope": "minimum count in the same realized union of two fixed-tree pruning families and the estimated-order contiguous family",
+  "oracle_threshold_comparison": "python-flint Arb enclosure refined until every exact rational cell distortion is certified on one side of c exp(-delta); a rational separator preserving that certified feasible set is then passed to the unchanged exact selector",
+  "public_default_components": ["positive_margin_oracle", "sparse_mixture_lower_bound"],
+  "sidak": {
+    "total_error": "retain each source study's alpha",
+    "unknown_mass_split": {"propensity": "alpha/2", "mass": "alpha/2"},
+    "known_mass_split": {"propensity": "alpha", "mass": "0"},
+    "propensity_individual_error": "largest m/2^80 whose exact product (1-m/2^80)^K is at least 1-alpha_e",
+    "mass_individual_error": "alpha_p/K by Bonferroni",
+    "interval": "two-sided outward-verified Clopper-Pearson",
+    "selection": "unchanged realized candidate families, caps and exact tie rules"
+  },
+  "pooled_contiguous_screen": {
+    "pilot_fraction": "1/5",
+    "datasets": "replication 10 in every one of the 48 historical conditions",
+    "candidate_collection": "conditional on the independent pilot: every distinct nonsingleton cell in the two fixed trees or the pilot-order contiguous family",
+    "heldout_allocation": {"raw": "4 alpha/5", "pooled": "alpha/5 divided by the complete conditional cell collection"},
+    "comparators": ["saved full-data original", "saved heldout raw full-alpha", "new heldout raw 4alpha/5 allocation control", "new heldout pilot-pooled common-event certificate"]
+  },
+  "lower_bound": {
+    "K": 64,
+    "a": "1/2",
+    "cap": "3/2",
+    "alpha": "1/20",
+    "gamma": "1/10",
+    "overlap_floor": "1/4",
+    "reference_b": ["4/13", "199/500"],
+    "near_boundary_denominator": 1000000000000
+  },
+  "root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 5.0,
+    "max_trials": 1000000
+  },
+  "recovery_root_policy": {
+    "grid_bits": 48,
+    "initial_precision": 128,
+    "max_precision": 1024,
+    "max_evaluations": 192,
+    "endpoint_seconds": 8.0,
+    "max_trials": 4000000
+  },
+  "execution": {
+    "workers": 4,
+    "native_threads": 1,
+    "root_cache_trim_threshold": 30000,
+    "root_cache_entries": 20000,
+    "forecast_safety_factor": 1.35
+  },
+  "reporting": {
+    "historical_weighting": "equal weight over 48 fixed conditions; uncertainty over 100 paired replication-index condition averages",
+    "condition_binary": "pointwise two-sided 95% Clopper-Pearson with the actual independent dataset denominator",
+    "paired": "paired differences over independent blocks; binary differences use mean-SE, not a pooled binomial interval",
+    "infinity_unresolved_rejection": "retain as distinct outcomes"
+  },
+  "scope": "retrospective assignment-only analysis; population truth is used only for oracle calculations and diagnostics"
+}
